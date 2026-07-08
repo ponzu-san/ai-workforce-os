@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { StatusBadge } from "@/components/common/StatusBadge";
+import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import {
   Card,
   CardContent,
@@ -14,6 +16,7 @@ import {
   addCommunicationAction,
   createBusinessProjectAction,
 } from "@/features/client/actions";
+import { ja, tStatus } from "@/lib/labels/ja";
 import { clientService } from "@/services/clientService";
 
 interface ClientDetailPageProps {
@@ -31,7 +34,7 @@ export default async function ClientDetailPage({
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
       <div>
         <Link href="/clients" className="text-sm text-muted-foreground">
-          ← Clients
+          ← {ja.nav.clients}
         </Link>
         <div className="mt-2 flex items-start justify-between gap-4">
           <div>
@@ -47,50 +50,41 @@ export default async function ClientDetailPage({
       {client.status === "lead" && (
         <form action={activateClientAction}>
           <input type="hidden" name="client_id" value={client.id} />
-          <button
-            type="submit"
-            className="rounded-md border px-4 py-2 text-sm hover:bg-accent"
-          >
-            クライアントを Active にする
-          </button>
+          <SubmitButton
+            label={ja.client.activate}
+            variant="outline"
+          />
         </form>
       )}
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Business Project 作成</CardTitle>
-          <CardDescription>
-            Sales → Contract → Delivery の Business Workflow を開始
-          </CardDescription>
+          <CardTitle className="text-base">{ja.client.businessProject}</CardTitle>
+          <CardDescription>{ja.client.businessProjectDesc}</CardDescription>
         </CardHeader>
         <CardContent>
           <form action={createBusinessProjectAction} className="space-y-3">
             <input type="hidden" name="client_id" value={client.id} />
             <input
               name="name"
-              placeholder="案件名 *"
+              placeholder={`${ja.client.projectName} *`}
               required
               defaultValue={`${client.company || client.name} 案件`}
               className="w-full rounded-md border border-input px-3 py-2 text-sm"
             />
             <textarea
               name="description"
-              placeholder="案件概要"
+              placeholder={ja.client.projectDesc}
               className="min-h-16 w-full rounded-md border border-input px-3 py-2 text-sm"
             />
-            <button
-              type="submit"
-              className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground"
-            >
-              Business Project を作成
-            </button>
+            <SubmitButton label={ja.client.createBusinessProject} />
           </form>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">連絡履歴</CardTitle>
+          <CardTitle className="text-base">{ja.client.communications}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <form action={addCommunicationAction} className="space-y-3">
@@ -100,32 +94,32 @@ export default async function ClientDetailPage({
               className="w-full rounded-md border border-input px-3 py-2 text-sm"
               defaultValue="email"
             >
-              <option value="email">Email</option>
-              <option value="meeting">Meeting</option>
-              <option value="phone">Phone</option>
+              <option value="email">{tStatus("email")}</option>
+              <option value="meeting">{tStatus("meeting")}</option>
+              <option value="phone">{tStatus("phone")}</option>
             </select>
             <input
               name="subject"
-              placeholder="件名"
+              placeholder={ja.client.subjectPlaceholder}
               className="w-full rounded-md border border-input px-3 py-2 text-sm"
             />
             <textarea
               name="content"
-              placeholder="内容 *"
+              placeholder={ja.client.contentPlaceholder}
               required
               className="min-h-20 w-full rounded-md border border-input px-3 py-2 text-sm"
             />
-            <button
-              type="submit"
-              className="rounded-md border px-4 py-2 text-sm hover:bg-accent"
-            >
-              履歴を追加
-            </button>
+            <SubmitButton
+              label={ja.client.addCommunication}
+              variant="outline"
+            />
           </form>
 
           <div className="space-y-2">
             {client.communications.length === 0 ? (
-              <p className="text-sm text-muted-foreground">履歴なし</p>
+              <p className="text-sm text-muted-foreground">
+                {ja.client.noCommunications}
+              </p>
             ) : (
               client.communications.map((comm) => (
                 <div key={comm.id} className="rounded-md border p-3 text-sm">
@@ -147,7 +141,7 @@ export default async function ClientDetailPage({
       {client.projects.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">関連 Project</CardTitle>
+            <CardTitle className="text-base">{ja.client.relatedProjects}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {client.projects.map((project) => (
@@ -163,18 +157,18 @@ export default async function ClientDetailPage({
                     {project.name}
                   </Link>
                   <p className="text-xs text-muted-foreground">
-                    {project.type} · {project.workflows[0]?.name ?? "Workflow"}
+                    {tStatus(project.type)} ·{" "}
+                    {project.workflows[0]?.name ?? ja.common.workflow}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <StatusBadge value={project.status} />
                   {project.workflows[0] && (
-                    <Link
-                      href={`/workflows/${project.workflows[0].id}`}
-                      className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground"
-                    >
-                      Workflow を開く
-                    </Link>
+                    <Button size="sm" asChild>
+                      <Link href={`/workflows/${project.workflows[0].id}`}>
+                        {ja.workflow.openWorkflow}
+                      </Link>
+                    </Button>
                   )}
                 </div>
               </div>

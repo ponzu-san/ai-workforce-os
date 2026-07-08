@@ -1,6 +1,6 @@
 /**
  * Phase 3 — AI Development Team の標準 Workflow テンプレート
- * Requirement → Design → Frontend → Backend → QA
+ * 要件定義 → デザイン → フロントエンド → バックエンド → 品質保証
  */
 
 export interface DevTeamStageTemplate {
@@ -15,60 +15,60 @@ export interface DevTeamStageTemplate {
 }
 
 export const DEV_TEAM_WORKFLOW = {
-  name: "Development Team Workflow",
-  description: "Requirement → Design → Frontend → Backend → QA",
+  name: "開発チームワークフロー",
+  description: "要件定義 → デザイン → フロントエンド → バックエンド → 品質保証",
   stages: [
     {
-      name: "Requirement",
+      name: "要件定義",
       order: 0,
       task: {
-        title: "Define requirements",
+        title: "要件を整理する",
         description:
-          "Summarize project goals, user stories, and acceptance criteria.",
+          "プロジェクト目標、ユーザーストーリー、受け入れ基準をまとめる。",
         priority: "high",
         agentRole: "pm",
       },
     },
     {
-      name: "Design",
+      name: "デザイン",
       order: 1,
       task: {
-        title: "Create UI/UX design proposal",
+        title: "UI/UXデザイン案を作成",
         description:
-          "Propose wireframes, layout, and design system based on requirements.",
+          "要件に基づきワイヤーフレーム、レイアウト、デザインシステムを提案する。",
         priority: "high",
         agentRole: "designer",
       },
     },
     {
-      name: "Frontend",
+      name: "フロントエンド",
       order: 2,
       task: {
-        title: "Implement UI components",
+        title: "UIコンポーネントを実装",
         description:
-          "Build React/Next.js components based on design and requirements.",
+          "デザインと要件に基づき React/Next.js コンポーネントを構築する。",
         priority: "medium",
         agentRole: "frontend",
       },
     },
     {
-      name: "Backend",
+      name: "バックエンド",
       order: 3,
       task: {
-        title: "Implement API and data layer",
+        title: "APIとデータ層を実装",
         description:
-          "Design and implement API routes, services, and database logic.",
+          "APIルート、サービス、データベースロジックを設計・実装する。",
         priority: "medium",
         agentRole: "backend",
       },
     },
     {
-      name: "QA",
+      name: "品質保証",
       order: 4,
       task: {
-        title: "Review and test",
+        title: "レビューとテスト",
         description:
-          "Run QA checklist against all deliverables and report issues.",
+          "全成果物に対してQAチェックリストを実行し、問題を報告する。",
         priority: "medium",
         agentRole: "qa",
       },

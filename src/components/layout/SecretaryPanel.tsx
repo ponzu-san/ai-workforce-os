@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ja } from "@/lib/labels/ja";
 
 interface SecretaryPanelProps {
   projectId?: string | null;
@@ -42,14 +43,14 @@ export function SecretaryPanel({ projectId }: SecretaryPanelProps) {
       };
 
       if (!parsed.success || !parsed.data) {
-        setError(parsed.error?.message ?? "Secretary AI 応答に失敗しました");
+        setError(parsed.error?.message ?? ja.secretary.error);
         return;
       }
 
       setReply(parsed.data.reply);
       setMessage("");
     } catch {
-      setError("通信エラーが発生しました");
+      setError(ja.secretary.networkError);
     } finally {
       setLoading(false);
     }
@@ -58,8 +59,8 @@ export function SecretaryPanel({ projectId }: SecretaryPanelProps) {
   return (
     <Card className="flex h-full flex-col">
       <CardHeader>
-        <CardTitle className="text-base">Secretary AI</CardTitle>
-        <CardDescription>Task整理・次のアクション提案</CardDescription>
+        <CardTitle className="text-base">{ja.secretary.title}</CardTitle>
+        <CardDescription>{ja.secretary.subtitle}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col gap-3">
         {reply && (
@@ -72,11 +73,11 @@ export function SecretaryPanel({ projectId }: SecretaryPanelProps) {
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="今日やることを相談..."
+            placeholder={ja.secretary.placeholder}
             className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
           />
           <Button type="submit" disabled={loading} className="w-full">
-            {loading ? "送信中..." : "Secretary に相談"}
+            {loading ? ja.secretary.sending : ja.secretary.submit}
           </Button>
         </form>
       </CardContent>

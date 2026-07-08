@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
+import { ja } from "@/lib/labels/ja";
 import { reviewApprovalAction } from "@/features/approval/actions";
 
 interface ApprovalActionsProps {
@@ -25,7 +26,7 @@ export function ApprovalActions({ approvalId }: ApprovalActionsProps) {
       <textarea
         value={comment}
         onChange={(e) => setComment(e.target.value)}
-        placeholder="コメント（任意）"
+        placeholder={ja.approval.commentPlaceholder}
         className="min-h-16 w-full rounded-md border border-input px-3 py-2 text-sm"
       />
       <div className="flex gap-2">
@@ -34,7 +35,7 @@ export function ApprovalActions({ approvalId }: ApprovalActionsProps) {
           disabled={pending}
           onClick={() => handleReview("approve")}
         >
-          Approve
+          {pending ? ja.common.loading : ja.approval.approve}
         </Button>
         <Button
           size="sm"
@@ -42,7 +43,7 @@ export function ApprovalActions({ approvalId }: ApprovalActionsProps) {
           disabled={pending}
           onClick={() => handleReview("reject")}
         >
-          Reject
+          {pending ? ja.common.loading : ja.approval.reject}
         </Button>
       </div>
     </div>

@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { ValidationReport } from "@/ai/validation/types";
+import { ja } from "@/lib/labels/ja";
 
 export function ValidationRunner() {
   const [loading, setLoading] = useState(false);
@@ -37,13 +38,13 @@ export function ValidationRunner() {
       };
 
       if (!json.data) {
-        setError(json.error?.message ?? "検証に失敗しました");
+        setError(json.error?.message ?? ja.validation.failed);
         return;
       }
 
       setReport(json.data);
     } catch {
-      setError("ネットワークエラーが発生しました");
+      setError(ja.validation.networkError);
     } finally {
       setLoading(false);
     }
@@ -53,9 +54,9 @@ export function ValidationRunner() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">自動検証を実行</CardTitle>
+          <CardTitle className="text-base">{ja.validation.run}</CardTitle>
           <CardDescription>
-            QA AI がチェック結果を分析し、レポートを生成します
+            QAエージェントがチェック結果を分析し、レポートを生成します
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -66,11 +67,10 @@ export function ValidationRunner() {
               onChange={(e) => setIncludeExecute(e.target.checked)}
               className="rounded border-input"
             />
-            Workflow 実行テストを含める（Demo Project で Execute Next Task
-            を実行・DB 更新あり）
+            {ja.validation.includeWorkflow}
           </label>
           <Button onClick={runValidation} disabled={loading}>
-            {loading ? "検証中..." : "自動検証を実行"}
+            {loading ? ja.validation.running : ja.validation.run}
           </Button>
           {error && <p className="text-sm text-red-600">{error}</p>}
         </CardContent>
@@ -80,18 +80,20 @@ export function ValidationRunner() {
         <>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-base">チェック結果</CardTitle>
+              <CardTitle className="text-base">{ja.validation.checkResults}</CardTitle>
               <StatusBadge value={report.summary.overall} />
             </CardHeader>
             <CardContent className="space-y-2">
               <p className="text-sm text-muted-foreground">
                 {report.runAt} ·{" "}
-                {report.executeMode ? "実行モード" : "読み取り専用"}
+                {report.executeMode
+                  ? ja.validation.executeMode
+                  : ja.validation.readOnly}
               </p>
               <p className="text-sm">
-                {report.summary.passed} passed / {report.summary.failed} failed
-                / {report.summary.warnings} warnings / {report.summary.skipped}{" "}
-                skipped
+                {report.summary.passed} {ja.status.pass} / {report.summary.failed}{" "}
+                {ja.status.fail} / {report.summary.warnings} {ja.status.warn} /{" "}
+                {report.summary.skipped} {ja.status.skip}
               </p>
               <div className="space-y-2">
                 {report.checks.map((check) => (
@@ -112,7 +114,7 @@ export function ValidationRunner() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">QA Agent レポート</CardTitle>
+              <CardTitle className="text-base">{ja.validation.qaReport}</CardTitle>
             </CardHeader>
             <CardContent>
               <pre className="max-h-96 overflow-auto rounded-md bg-muted p-4 text-xs whitespace-pre-wrap">

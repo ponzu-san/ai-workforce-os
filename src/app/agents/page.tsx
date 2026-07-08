@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ja } from "@/lib/labels/ja";
 import { agentService } from "@/services/dashboardService";
 
 export default async function AgentsPage() {
@@ -16,10 +17,8 @@ export default async function AgentsPage() {
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold">AI Agents</h1>
-        <p className="text-muted-foreground">
-          Phase 5 — AI Agents（Full Team · v1.0.0）
-        </p>
+        <h1 className="text-2xl font-bold">{ja.agents.title}</h1>
+        <p className="text-muted-foreground">{ja.agents.subtitle}</p>
       </div>
 
       <div className="grid gap-4">
@@ -35,11 +34,11 @@ export default async function AgentsPage() {
             <CardContent className="space-y-2 text-sm">
               <p>{agent.description}</p>
               <p className="text-muted-foreground">
-                v{agent.version} · Approval Level {agent.approval_level}
+                v{agent.version} · {ja.agents.approvalLevel} {agent.approval_level}
               </p>
               {agent.role === "secretary" && (
                 <p className="text-xs text-muted-foreground">
-                  Orchestrator — Workflow 制御権限を持つ唯一の Agent
+                  {ja.agents.orchestratorNote}
                 </p>
               )}
             </CardContent>
@@ -49,9 +48,9 @@ export default async function AgentsPage() {
 
       <Card>
         <CardContent className="p-4 text-sm text-muted-foreground">
-          Agent 間の直接通信は禁止。Workflow Engine が Agent を順番に実行します。
+          {ja.agents.noDirectComm}
           <Link href="/workflows" className="ml-1 text-primary underline">
-            Workflows へ
+            {ja.agents.goWorkflows}
           </Link>
         </CardContent>
       </Card>

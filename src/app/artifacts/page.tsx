@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ja } from "@/lib/labels/ja";
 import { artifactService } from "@/services/artifactService";
 
 export default async function ArtifactsPage() {
@@ -15,17 +16,14 @@ export default async function ArtifactsPage() {
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold">Artifacts</h1>
-        <p className="text-muted-foreground">
-          AI が生成した成果物（Agent 間の受け渡し媒体）
-        </p>
+        <h1 className="text-2xl font-bold">{ja.artifacts.title}</h1>
+        <p className="text-muted-foreground">{ja.artifacts.subtitle}</p>
       </div>
 
       {artifacts.length === 0 ? (
         <Card>
           <CardContent className="p-6 text-sm text-muted-foreground">
-            成果物がありません。Workflow で「Execute Next Task」を実行すると Agent
-            が Artifact を生成します。
+            {ja.artifacts.empty}
           </CardContent>
         </Card>
       ) : (
@@ -41,13 +39,13 @@ export default async function ArtifactsPage() {
             <CardContent>
               <pre className="max-h-64 overflow-auto rounded-md bg-muted p-4 text-xs whitespace-pre-wrap">
                 {artifact.content.slice(0, 2000)}
-                {artifact.content.length > 2000 ? "\n...(truncated)" : ""}
+                {artifact.content.length > 2000 ? `\n${ja.artifacts.truncated}` : ""}
               </pre>
               <Link
                 href={`/projects/${artifact.task.stage.workflow.project.id}`}
                 className="mt-2 inline-block text-sm text-primary underline"
               >
-                Project へ
+                {ja.artifacts.goProject}
               </Link>
             </CardContent>
           </Card>

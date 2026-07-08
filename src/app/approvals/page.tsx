@@ -6,6 +6,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ApprovalActions } from "@/features/approval/components/ApprovalActions";
+import { ja } from "@/lib/labels/ja";
 import { approvalService } from "@/services/approvalService";
 
 export default async function ApprovalsPage() {
@@ -17,16 +18,16 @@ export default async function ApprovalsPage() {
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold">Approvals</h1>
-        <p className="text-muted-foreground">Human in the Loop 承認管理</p>
+        <h1 className="text-2xl font-bold">{ja.approval.title}</h1>
+        <p className="text-muted-foreground">{ja.approval.subtitle}</p>
       </div>
 
       <section>
-        <h2 className="mb-3 text-lg font-semibold">Pending</h2>
+        <h2 className="mb-3 text-lg font-semibold">{ja.approval.pending}</h2>
         {pending.length === 0 ? (
           <Card>
             <CardContent className="p-6 text-sm text-muted-foreground">
-              承認待ちはありません
+              {ja.approval.noPending}
             </CardContent>
           </Card>
         ) : (
@@ -38,7 +39,7 @@ export default async function ApprovalsPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <p className="text-sm text-muted-foreground">
-                  Project: {approval.task.stage.workflow.project.name}
+                  {ja.common.project}: {approval.task.stage.workflow.project.name}
                 </p>
                 <ApprovalActions approvalId={approval.id} />
               </CardContent>
@@ -48,7 +49,7 @@ export default async function ApprovalsPage() {
       </section>
 
       <section>
-        <h2 className="mb-3 text-lg font-semibold">History</h2>
+        <h2 className="mb-3 text-lg font-semibold">{ja.approval.history}</h2>
         <div className="space-y-2">
           {history
             .filter((a) => a.status !== "pending")

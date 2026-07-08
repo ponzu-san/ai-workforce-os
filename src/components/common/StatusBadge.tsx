@@ -1,3 +1,4 @@
+import { tStatus } from "@/lib/labels/ja";
 import { cn } from "@/lib/utils";
 
 const variants: Record<string, string> = {
@@ -31,6 +32,8 @@ const variants: Record<string, string> = {
   phone: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300",
   business: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
   development: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+  cancelled: "bg-muted text-muted-foreground",
+  failed: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
 };
 
 interface StatusBadgeProps {
@@ -42,12 +45,12 @@ export function StatusBadge({ value, className }: StatusBadgeProps) {
   return (
     <span
       className={cn(
-        "inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize",
+        "inline-flex rounded-full px-2 py-0.5 text-xs font-medium",
         variants[value] ?? "bg-muted text-muted-foreground",
         className,
       )}
     >
-      {value}
+      {tStatus(value)}
     </span>
   );
 }

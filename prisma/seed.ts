@@ -121,7 +121,7 @@ async function ensureDemoProject(workspaceId: string) {
       data: {
         workspace_id: workspaceId,
         name: "Demo Project",
-        description: "Demo project for AI Workforce OS Phase 3",
+        description: "AI Workforce OS デモプロジェクト（5ステージ開発チームワークフロー）",
         status: "active",
         workflows: { create: buildWorkflowData() },
       },
@@ -131,7 +131,7 @@ async function ensureDemoProject(workspaceId: string) {
       data: {
         project_id: project.id,
         type: "project",
-        content: "Demo project with 5-stage Development Team workflow (Phase 3).",
+        content: "5ステージの開発チームワークフローを持つデモプロジェクト。",
         importance: 8,
         source: "seed",
       },

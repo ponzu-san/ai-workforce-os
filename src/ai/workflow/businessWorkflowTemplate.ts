@@ -1,6 +1,6 @@
 /**
  * Phase 4 — Business Workflow テンプレート
- * Sales → Contract → Delivery
+ * 営業 → 契約 → 納品
  */
 
 export interface BusinessStageTemplate {
@@ -15,38 +15,38 @@ export interface BusinessStageTemplate {
 }
 
 export const BUSINESS_WORKFLOW = {
-  name: "Business Workflow",
-  description: "Sales → Contract → Delivery",
+  name: "ビジネスワークフロー",
+  description: "営業 → 契約 → 納品",
   stages: [
     {
-      name: "Sales",
+      name: "営業",
       order: 0,
       task: {
-        title: "Draft proposal and estimate",
+        title: "提案書と見積もりを作成",
         description:
-          "Create a client proposal, scope summary, and cost estimate.",
+          "クライアント向け提案書、スコープ概要、コスト見積もりを作成する。",
         priority: "high",
         agentRole: "sales",
       },
     },
     {
-      name: "Contract",
+      name: "契約",
       order: 1,
       task: {
-        title: "Contract checklist and scope",
+        title: "契約チェックリストとスコープ確認",
         description:
-          "Review contract terms, scope boundaries, and risk checklist.",
+          "契約条件、スコープ境界、リスクチェックリストをレビューする。",
         priority: "high",
         agentRole: "pm",
       },
     },
     {
-      name: "Delivery",
+      name: "納品",
       order: 2,
       task: {
-        title: "Final review and delivery package",
+        title: "最終レビューと納品パッケージ",
         description:
-          "Prepare delivery checklist, handover docs, and sign-off summary.",
+          "納品チェックリスト、引き継ぎ資料、サインオフ概要を準備する。",
         priority: "medium",
         agentRole: "qa",
       },

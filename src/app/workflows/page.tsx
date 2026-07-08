@@ -8,6 +8,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ja } from "@/lib/labels/ja";
+import { displayStageName } from "@/lib/labels/stageNames";
 import { projectService } from "@/services/projectService";
 import { workflowService } from "@/services/workflowService";
 
@@ -23,8 +25,8 @@ export default async function WorkflowsPage() {
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold">Workflows</h1>
-        <p className="text-muted-foreground">Workflow 基本構造の可視化</p>
+        <h1 className="text-2xl font-bold">{ja.workflow.title}</h1>
+        <p className="text-muted-foreground">{ja.workflow.structure}</p>
       </div>
 
       {workflowsByProject.map(({ project, workflows }) => (
@@ -35,7 +37,9 @@ export default async function WorkflowsPage() {
                 {project.name}
               </Link>
             </CardTitle>
-            <CardDescription>{workflows.length} workflow(s)</CardDescription>
+            <CardDescription>
+              {workflows.length} {ja.workflow.workflowCount}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {workflows.map((workflow) => (
@@ -51,7 +55,7 @@ export default async function WorkflowsPage() {
                         key={stage.id}
                         className="rounded-md bg-muted px-3 py-2 text-sm"
                       >
-                        {stage.name}
+                        {displayStageName(stage.name)}
                         <span className="ml-2 text-muted-foreground">
                           ({stage.tasks.length})
                         </span>

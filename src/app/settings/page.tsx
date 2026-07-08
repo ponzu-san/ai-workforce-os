@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ja } from "@/lib/labels/ja";
 
 export default function SettingsPage() {
   const hasLlmKey =
@@ -16,53 +17,54 @@ export default function SettingsPage() {
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold">Settings</h1>
-        <p className="text-muted-foreground">AI Workforce OS システム情報</p>
+        <h1 className="text-2xl font-bold">{ja.settings.title}</h1>
+        <p className="text-muted-foreground">{ja.settings.subtitle}</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Application</CardTitle>
+          <CardTitle className="text-base">{ja.settings.application}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
           <p>
-            <span className="text-muted-foreground">Version:</span> v1.0.0
+            <span className="text-muted-foreground">{ja.settings.version}:</span>{" "}
+            v1.0.0
           </p>
           <p>
-            <span className="text-muted-foreground">Phase:</span> AI Workforce
-            OS Complete
+            <span className="text-muted-foreground">{ja.settings.phase}:</span>{" "}
+            {ja.settings.phaseValue}
           </p>
           <p>
-            <span className="text-muted-foreground">LLM Mode:</span>{" "}
-            {hasLlmKey ? "API Connected" : "Offline Fallback"}
+            <span className="text-muted-foreground">{ja.settings.llmMode}:</span>{" "}
+            {hasLlmKey ? ja.settings.apiConnected : ja.settings.offlineFallback}
           </p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Quick Links</CardTitle>
+          <CardTitle className="text-base">{ja.settings.quickLinks}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
           <Link href="/analytics" className="block text-primary underline">
-            Analytics（Cost / Productivity）
+            {ja.nav.analytics}（{ja.analytics.aiCost} / {ja.analytics.taskCompletion}）
           </Link>
           <Link href="/validation" className="block text-primary underline">
-            Validation（自動検証）
+            {ja.nav.validation}（{ja.validation.run}）
           </Link>
           <Link href="/agents" className="block text-primary underline">
-            AI Agents
+            {ja.nav.agents}
           </Link>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Memory Layers</CardTitle>
-          <CardDescription>Phase 5 — 3層 Memory</CardDescription>
+          <CardTitle className="text-base">{ja.settings.memoryLayers}</CardTitle>
+          <CardDescription>{ja.settings.phaseValue}</CardDescription>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">
-          Short Term · Project · User（Global / Skill は将来拡張）
+          {ja.settings.memoryDesc}
         </CardContent>
       </Card>
     </div>

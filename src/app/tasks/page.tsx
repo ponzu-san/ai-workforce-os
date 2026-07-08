@@ -1,4 +1,5 @@
 import { StatusBadge } from "@/components/common/StatusBadge";
+import { SubmitButton } from "@/components/ui/submit-button";
 import {
   Card,
   CardContent,
@@ -7,6 +8,7 @@ import {
 } from "@/components/ui/card";
 import { TaskStatusActions } from "@/features/task/components/TaskStatusActions";
 import { createTaskAction } from "@/features/task/actions";
+import { ja, tStatus } from "@/lib/labels/ja";
 import { projectService } from "@/services/projectService";
 import { taskService } from "@/services/taskService";
 
@@ -19,13 +21,13 @@ export default async function TasksPage() {
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold">Tasks</h1>
-        <p className="text-muted-foreground">タスク管理</p>
+        <h1 className="text-2xl font-bold">{ja.task.title}</h1>
+        <p className="text-muted-foreground">{ja.task.subtitle}</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">新規タスク</CardTitle>
+          <CardTitle className="text-base">{ja.task.add}</CardTitle>
         </CardHeader>
         <CardContent>
           <form action={createTaskAction} className="space-y-3">
@@ -43,13 +45,13 @@ export default async function TasksPage() {
             </select>
             <input
               name="title"
-              placeholder="タスク名"
+              placeholder={ja.project.taskName}
               required
               className="w-full rounded-md border border-input px-3 py-2 text-sm"
             />
             <textarea
               name="description"
-              placeholder="説明"
+              placeholder={ja.project.descLabel}
               className="min-h-20 w-full rounded-md border border-input px-3 py-2 text-sm"
             />
             <select
@@ -57,17 +59,12 @@ export default async function TasksPage() {
               className="w-full rounded-md border border-input px-3 py-2 text-sm"
               defaultValue="medium"
             >
-              <option value="critical">Critical</option>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
+              <option value="critical">{tStatus("critical")}</option>
+              <option value="high">{tStatus("high")}</option>
+              <option value="medium">{tStatus("medium")}</option>
+              <option value="low">{tStatus("low")}</option>
             </select>
-            <button
-              type="submit"
-              className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground"
-            >
-              作成
-            </button>
+            <SubmitButton label={ja.common.create} />
           </form>
         </CardContent>
       </Card>
@@ -80,7 +77,7 @@ export default async function TasksPage() {
                 <p className="font-medium">{task.title}</p>
                 <p className="text-sm text-muted-foreground">
                   {task.stage.workflow.project.name} ·{" "}
-                  {task.assigned_agent?.name ?? "Unassigned"}
+                  {task.assigned_agent?.name ?? ja.common.unassigned}
                 </p>
                 <div className="mt-2 flex gap-1">
                   <StatusBadge value={task.priority} />

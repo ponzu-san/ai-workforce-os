@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { ja } from "@/lib/labels/ja";
+
 interface WorkflowFeedbackProps {
   query: {
     executed?: string;
@@ -14,32 +16,36 @@ export function WorkflowFeedback({ query }: WorkflowFeedbackProps) {
   if (query.error) {
     return (
       <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
-        <p className="font-medium">実行エラー</p>
+        <p className="font-medium">{ja.feedback.errorTitle}</p>
         <p>{decodeURIComponent(query.error)}</p>
       </div>
     );
   }
 
   if (query.executed === "1") {
-    const taskName = query.task ? decodeURIComponent(query.task) : "Task";
+    const taskName = query.task ? decodeURIComponent(query.task) : ja.common.task;
     return (
       <div className="rounded-md border border-green-200 bg-green-50 p-4 text-sm text-green-800 dark:border-green-900 dark:bg-green-950/30 dark:text-green-300">
-        <p className="font-medium">Task 実行完了: {taskName}</p>
+        <p className="font-medium">
+          {ja.feedback.taskDone}: {taskName}
+        </p>
         <p className="mt-1">
-          ステータスが <strong>review</strong> になりました。次を確認してください:
+          {ja.feedback.taskReview}{" "}
+          <strong>{ja.feedback.taskReviewStatus}</strong>
+          {ja.feedback.taskDoneHint}
         </p>
         <ul className="mt-2 list-inside list-disc">
           <li>
             <Link href="/approvals" className="underline">
-              Approvals
-            </Link>{" "}
-            で承認
+              {ja.feedback.goApprovals}
+            </Link>
+            {ja.feedback.goApprovalsAction}
           </li>
           <li>
             <Link href="/artifacts" className="underline">
-              Artifacts
-            </Link>{" "}
-            で成果物を確認
+              {ja.feedback.goArtifacts}
+            </Link>
+            {ja.feedback.goArtifactsAction}
           </li>
         </ul>
       </div>
@@ -49,8 +55,7 @@ export function WorkflowFeedback({ query }: WorkflowFeedbackProps) {
   if (query.started === "1") {
     return (
       <div className="rounded-md border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-300">
-        Workflow を開始しました。Agent 割当済み — Execute Next Task
-        をクリックして最初の Task を実行してください。
+        {ja.feedback.started}
       </div>
     );
   }
@@ -58,8 +63,9 @@ export function WorkflowFeedback({ query }: WorkflowFeedbackProps) {
   if (query.done === "1") {
     return (
       <div className="rounded-md border border-green-200 bg-green-50 p-4 text-sm text-green-800 dark:border-green-900 dark:bg-green-950/30 dark:text-green-300">
-        すべての Task が完了しました。Workflow は{" "}
-        <strong>completed</strong> です。
+        {ja.feedback.completed}{" "}
+        <strong>{ja.feedback.completedStatus}</strong>
+        {ja.feedback.completedSuffix}
       </div>
     );
   }

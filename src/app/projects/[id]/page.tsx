@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { StatusBadge } from "@/components/common/StatusBadge";
+import { SubmitButton } from "@/components/ui/submit-button";
 import {
   Card,
   CardContent,
@@ -10,6 +11,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { createTaskAction } from "@/features/task/actions";
+import { ja, tStatus } from "@/lib/labels/ja";
+import { displayStageName } from "@/lib/labels/stageNames";
 import { projectService } from "@/services/projectService";
 import { taskService } from "@/services/taskService";
 import { workflowService } from "@/services/workflowService";
@@ -35,7 +38,7 @@ export default async function ProjectDetailPage({
       <div className="flex items-start justify-between gap-4">
         <div>
           <Link href="/projects" className="text-sm text-muted-foreground">
-            ← Projects
+            ← {ja.nav.projects}
           </Link>
           <h1 className="mt-2 text-2xl font-bold">{project.name}</h1>
           <p className="text-muted-foreground">{project.description}</p>
@@ -45,8 +48,8 @@ export default async function ProjectDetailPage({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Workflow</CardTitle>
-          <CardDescription>基本構造（Stage / Task）</CardDescription>
+          <CardTitle className="text-base">{ja.common.workflow}</CardTitle>
+          <CardDescription>{ja.project.workflowStructure}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {workflows.map((workflow) => (
@@ -57,9 +60,11 @@ export default async function ProjectDetailPage({
               </div>
               {workflow.stages.map((stage) => (
                 <div key={stage.id} className="ml-2 border-l pl-4">
-                  <p className="text-sm font-medium">{stage.name}</p>
+                  <p className="text-sm font-medium">
+                    {displayStageName(stage.name)}
+                  </p>
                   <p className="text-xs text-muted-foreground">
-                    {stage.tasks.length} tasks
+                    {stage.tasks.length} {ja.common.tasks}
                   </p>
                 </div>
               ))}
@@ -70,20 +75,20 @@ export default async function ProjectDetailPage({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">タスク追加</CardTitle>
+          <CardTitle className="text-base">{ja.project.addTask}</CardTitle>
         </CardHeader>
         <CardContent>
           <form action={createTaskAction} className="space-y-3">
             <input type="hidden" name="project_id" value={project.id} />
             <input
               name="title"
-              placeholder="タスク名"
+              placeholder={ja.project.taskName}
               required
               className="w-full rounded-md border border-input px-3 py-2 text-sm"
             />
             <textarea
               name="description"
-              placeholder="説明"
+              placeholder={ja.project.descLabel}
               className="min-h-20 w-full rounded-md border border-input px-3 py-2 text-sm"
             />
             <select
@@ -91,24 +96,19 @@ export default async function ProjectDetailPage({
               className="w-full rounded-md border border-input px-3 py-2 text-sm"
               defaultValue="medium"
             >
-              <option value="critical">Critical</option>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
+              <option value="critical">{tStatus("critical")}</option>
+              <option value="high">{tStatus("high")}</option>
+              <option value="medium">{tStatus("medium")}</option>
+              <option value="low">{tStatus("low")}</option>
             </select>
-            <button
-              type="submit"
-              className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground"
-            >
-              タスク作成
-            </button>
+            <SubmitButton label={ja.project.taskCreate} />
           </form>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Tasks</CardTitle>
+          <CardTitle className="text-base">{ja.nav.tasks}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {tasks.map((task) => (
@@ -119,7 +119,7 @@ export default async function ProjectDetailPage({
               <div>
                 <p className="font-medium">{task.title}</p>
                 <p className="text-xs text-muted-foreground">
-                  {task.assigned_agent?.name ?? "Unassigned"}
+                  {task.assigned_agent?.name ?? ja.common.unassigned}
                 </p>
               </div>
               <div className="flex gap-1">

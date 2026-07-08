@@ -3,20 +3,21 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { ja } from "@/lib/labels/ja";
 import { cn } from "@/lib/utils";
 
 const navigationItems = [
-  { href: "/", label: "Dashboard" },
-  { href: "/analytics", label: "Analytics" },
-  { href: "/projects", label: "Projects" },
-  { href: "/clients", label: "Clients" },
-  { href: "/tasks", label: "Tasks" },
-  { href: "/workflows", label: "Workflows" },
-  { href: "/artifacts", label: "Artifacts" },
-  { href: "/agents", label: "Agents" },
-  { href: "/approvals", label: "Approvals" },
-  { href: "/validation", label: "Validation" },
-  { href: "/settings", label: "Settings" },
+  { href: "/", label: ja.nav.dashboard },
+  { href: "/analytics", label: ja.nav.analytics },
+  { href: "/projects", label: ja.nav.projects },
+  { href: "/clients", label: ja.nav.clients },
+  { href: "/tasks", label: ja.nav.tasks },
+  { href: "/workflows", label: ja.nav.workflows },
+  { href: "/artifacts", label: ja.nav.artifacts },
+  { href: "/agents", label: ja.nav.agents },
+  { href: "/approvals", label: ja.nav.approvals },
+  { href: "/validation", label: ja.nav.validation },
+  { href: "/settings", label: ja.nav.settings },
 ] as const;
 
 export function Sidebar() {
@@ -33,10 +34,10 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                "rounded-md px-3 py-2 text-sm font-medium transition-all duration-150 ease-out",
                 isActive
                   ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:translate-x-0.5 active:scale-[0.98]",
               )}
             >
               {item.label}
@@ -45,8 +46,7 @@ export function Sidebar() {
         })}
       </nav>
       <div className="border-t border-border p-4">
-        <p className="text-xs text-muted-foreground">Phase 5 Complete</p>
-        <p className="text-xs font-medium text-foreground">v1.0.0</p>
+        <p className="text-xs text-muted-foreground">v1.0.0 完成版</p>
       </div>
     </aside>
   );

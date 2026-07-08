@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { StatusBadge } from "@/components/common/StatusBadge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -8,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ja } from "@/lib/labels/ja";
 import { dashboardService } from "@/services/dashboardService";
 
 export default async function DashboardPage() {
@@ -16,30 +18,25 @@ export default async function DashboardPage() {
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-        <p className="mt-1 text-muted-foreground">
-          今日やること・承認待ち・Cost / Productivity
-        </p>
+        <h1 className="text-2xl font-bold tracking-tight">{ja.dashboard.title}</h1>
+        <p className="mt-1 text-muted-foreground">{ja.dashboard.subtitle}</p>
       </div>
 
       <Card>
         <CardContent className="flex items-center justify-between p-4">
           <p className="text-sm text-muted-foreground">
-            Business Dashboard — AI Cost / Productivity / Agent Activity
+            {ja.dashboard.analyticsBanner}
           </p>
-          <Link
-            href="/analytics"
-            className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground"
-          >
-            Analytics を開く
-          </Link>
+          <Button size="sm" asChild>
+            <Link href="/analytics">{ja.dashboard.openAnalytics}</Link>
+          </Button>
         </CardContent>
       </Card>
 
       <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Projects</CardTitle>
+            <CardTitle className="text-base">{ja.dashboard.projects}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">{summary.stats.projectCount}</p>
@@ -47,7 +44,7 @@ export default async function DashboardPage() {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Tasks</CardTitle>
+            <CardTitle className="text-base">{ja.dashboard.tasks}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">{summary.stats.taskCount}</p>
@@ -55,7 +52,7 @@ export default async function DashboardPage() {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Approvals</CardTitle>
+            <CardTitle className="text-base">{ja.dashboard.approvals}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">
@@ -65,18 +62,18 @@ export default async function DashboardPage() {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Clients</CardTitle>
+            <CardTitle className="text-base">{ja.dashboard.clients}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">{summary.stats.clientCount}</p>
             <Link href="/clients" className="text-xs text-primary underline">
-              一覧へ
+              {ja.common.openList}
             </Link>
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Leads</CardTitle>
+            <CardTitle className="text-base">{ja.dashboard.leads}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">{summary.stats.leadCount}</p>
@@ -87,13 +84,13 @@ export default async function DashboardPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Today</CardTitle>
-            <CardDescription>優先タスク</CardDescription>
+            <CardTitle>{ja.task.today}</CardTitle>
+            <CardDescription>{ja.task.priority}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {summary.todayTasks.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                タスクがありません
+                {ja.dashboard.noTodayTasks}
               </p>
             ) : (
               summary.todayTasks.map((task) => (
@@ -120,12 +117,14 @@ export default async function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Approvals</CardTitle>
-            <CardDescription>承認待ち</CardDescription>
+            <CardTitle>{ja.approval.title}</CardTitle>
+            <CardDescription>{ja.approval.pending}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {summary.pendingApprovals.length === 0 ? (
-              <p className="text-sm text-muted-foreground">承認待ちなし</p>
+              <p className="text-sm text-muted-foreground">
+                {ja.dashboard.noApprovals}
+              </p>
             ) : (
               summary.pendingApprovals.map((approval) => (
                 <div
@@ -138,14 +137,14 @@ export default async function DashboardPage() {
               ))
             )}
             <Link href="/approvals" className="text-sm text-primary underline">
-              承認一覧へ
+              {ja.approval.goToList}
             </Link>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Active Projects</CardTitle>
+            <CardTitle>{ja.dashboard.activeProjects}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {summary.activeProjects.map((project) => (
@@ -157,7 +156,7 @@ export default async function DashboardPage() {
                 <div>
                   <p className="font-medium">{project.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {project.taskCount} tasks
+                    {project.taskCount} {ja.common.tasks}
                   </p>
                 </div>
                 <StatusBadge value={project.status} />
@@ -168,13 +167,13 @@ export default async function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>AI Activity</CardTitle>
-            <CardDescription>最近の実行履歴</CardDescription>
+            <CardTitle>{ja.dashboard.aiActivity}</CardTitle>
+            <CardDescription>{ja.dashboard.aiActivityDesc}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {summary.recentExecutions.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Secretary AI に相談すると履歴が表示されます
+                {ja.dashboard.noExecutions}
               </p>
             ) : (
               summary.recentExecutions.map((log) => (
