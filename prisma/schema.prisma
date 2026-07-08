@@ -1,0 +1,354 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProjectStatus {
+  draft
+  active
+  completed
+  archived
+}
+
+enum WorkflowStatus {
+  draft
+  planning
+  running
+  waiting_approval
+  completed
+  failed
+  cancelled
+}
+
+enum StageStatus {
+  pending
+  running
+  completed
+}
+
+enum TaskStatus {
+  todo
+  running
+  review
+  done
+  blocked
+}
+
+enum TaskPriority {
+  critical
+  high
+  medium
+  low
+}
+
+enum ApprovalStatus {
+  pending
+  approved
+  rejected
+}
+
+enum AgentStatus {
+  active
+  inactive
+}
+
+enum MemoryType {
+  short_term
+  project
+  user
+}
+
+enum ExecutionStatus {
+  pending
+  running
+  completed
+  failed
+}
+
+enum NotificationType {
+  information
+  success
+  warning
+  error
+  approval
+  reminder
+  recommendation
+  system
+}
+
+enum NotificationPriority {
+  critical
+  high
+  medium
+  low
+}
+
+enum ClientStatus {
+  lead
+  active
+  inactive
+  archived
+}
+
+enum CommunicationChannel {
+  email
+  meeting
+  chat
+  phone
+  other
+}
+
+enum ProjectType {
+  development
+  business
+}
+
+model User {
+  id         String      @id @default(uuid()) @db.Uuid
+  email      String      @unique
+  name       String
+  created_at DateTime    @default(now()) @map("created_at")
+  updated_at DateTime    @updatedAt @map("updated_at")
+  workspaces Workspace[]
+
+  @@map("users")
+}
+
+model Workspace {
+  id         String    @id @default(uuid()) @db.Uuid
+  name       String
+  owner_id   String    @map("owner_id") @db.Uuid
+  created_at DateTime  @default(now()) @map("created_at")
+  updated_at DateTime  @updatedAt @map("updated_at")
+  owner      User      @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+  projects   Project[]
+  clients    Client[]
+
+  @@index([owner_id])
+  @@map("workspaces")
+}
+
+model Project {
+  id           String        @id @default(uuid()) @db.Uuid
+  workspace_id String        @map("workspace_id") @db.Uuid
+  client_id    String?       @map("client_id") @db.Uuid
+  name         String
+  description  String        @default("")
+  type         ProjectType   @default(development)
+  status       ProjectStatus @default(draft)
+  deadline     DateTime?
+  created_at   DateTime      @default(now()) @map("created_at")
+  updated_at   DateTime      @updatedAt @map("updated_at")
+  workspace    Workspace     @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  client       Client?       @relation(fields: [client_id], references: [id], onDelete: SetNull)
+  workflows    Workflow[]
+  memories     Memory[]
+
+  @@index([workspace_id])
+  @@index([client_id])
+  @@index([status])
+  @@map("projects")
+}
+
+model Workflow {
+  id               String         @id @default(uuid()) @db.Uuid
+  project_id       String         @map("project_id") @db.Uuid
+  name             String
+  description      String         @default("")
+  status           WorkflowStatus @default(draft)
+  current_stage_id String?        @map("current_stage_id") @db.Uuid
+  created_at       DateTime       @default(now()) @map("created_at")
+  updated_at       DateTime       @updatedAt @map("updated_at")
+  project          Project        @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  stages           Stage[]
+
+  @@index([project_id])
+  @@index([status])
+  @@map("workflows")
+}
+
+model Stage {
+  id          String      @id @default(uuid()) @db.Uuid
+  workflow_id String      @map("workflow_id") @db.Uuid
+  name        String
+  order       Int         @default(0)
+  status      StageStatus @default(pending)
+  workflow    Workflow    @relation(fields: [workflow_id], references: [id], onDelete: Cascade)
+  tasks       Task[]
+
+  @@index([workflow_id])
+  @@map("stages")
+}
+
+model Agent {
+  id             String          @id @default(uuid()) @db.Uuid
+  name           String
+  role           String
+  description    String          @default("")
+  version        String          @default("1.0.0")
+  status         AgentStatus     @default(active)
+  approval_level Int             @default(1) @map("approval_level")
+  created_at     DateTime        @default(now()) @map("created_at")
+  updated_at     DateTime        @updatedAt @map("updated_at")
+  tasks          Task[]
+  execution_logs ExecutionLog[]
+
+  @@map("agents")
+}
+
+model Task {
+  id                String         @id @default(uuid()) @db.Uuid
+  stage_id          String         @map("stage_id") @db.Uuid
+  title             String
+  description       String         @default("")
+  priority          TaskPriority   @default(medium)
+  status            TaskStatus     @default(todo)
+  assigned_agent_id String?        @map("assigned_agent_id") @db.Uuid
+  approval_level    Int            @default(1) @map("approval_level")
+  created_at        DateTime       @default(now()) @map("created_at")
+  updated_at        DateTime       @updatedAt @map("updated_at")
+  stage             Stage          @relation(fields: [stage_id], references: [id], onDelete: Cascade)
+  assigned_agent    Agent?         @relation(fields: [assigned_agent_id], references: [id], onDelete: SetNull)
+  approvals         Approval[]
+  artifacts         Artifact[]
+  execution_logs    ExecutionLog[]
+
+  @@index([stage_id])
+  @@index([status])
+  @@index([assigned_agent_id])
+  @@map("tasks")
+}
+
+model Approval {
+  id          String         @id @default(uuid()) @db.Uuid
+  task_id     String         @map("task_id") @db.Uuid
+  status      ApprovalStatus @default(pending)
+  comment     String         @default("")
+  approved_by String?        @map("approved_by")
+  approved_at DateTime?      @map("approved_at")
+  created_at  DateTime       @default(now()) @map("created_at")
+  updated_at  DateTime       @updatedAt @map("updated_at")
+  task        Task           @relation(fields: [task_id], references: [id], onDelete: Cascade)
+
+  @@index([task_id])
+  @@index([status])
+  @@map("approvals")
+}
+
+model Memory {
+  id         String     @id @default(uuid()) @db.Uuid
+  project_id String?    @map("project_id") @db.Uuid
+  type       MemoryType
+  content    String
+  importance Int        @default(5)
+  source     String     @default("")
+  created_at DateTime   @default(now()) @map("created_at")
+  updated_at DateTime   @updatedAt @map("updated_at")
+  project    Project?   @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@index([project_id])
+  @@index([type])
+  @@map("memories")
+}
+
+model Artifact {
+  id         String   @id @default(uuid()) @db.Uuid
+  task_id    String   @map("task_id") @db.Uuid
+  type       String
+  name       String
+  content    String   @default("")
+  version    String   @default("1.0.0")
+  created_at DateTime @default(now()) @map("created_at")
+  task       Task     @relation(fields: [task_id], references: [id], onDelete: Cascade)
+
+  @@index([task_id])
+  @@map("artifacts")
+}
+
+model ExecutionLog {
+  id            String          @id @default(uuid()) @db.Uuid
+  agent_id      String          @map("agent_id") @db.Uuid
+  task_id       String?         @map("task_id") @db.Uuid
+  model         String
+  input_tokens  Int             @default(0) @map("input_tokens")
+  output_tokens Int             @default(0) @map("output_tokens")
+  duration_ms   Int             @default(0) @map("duration_ms")
+  status        ExecutionStatus @default(completed)
+  created_at    DateTime        @default(now()) @map("created_at")
+  agent         Agent           @relation(fields: [agent_id], references: [id], onDelete: Cascade)
+  task          Task?           @relation(fields: [task_id], references: [id], onDelete: SetNull)
+  cost_records  CostRecord[]
+
+  @@index([agent_id])
+  @@index([task_id])
+  @@map("execution_logs")
+}
+
+model CostRecord {
+  id           String       @id @default(uuid()) @db.Uuid
+  execution_id String       @map("execution_id") @db.Uuid
+  provider     String
+  model        String
+  token_usage  Int          @default(0) @map("token_usage")
+  cost         Float        @default(0)
+  created_at   DateTime     @default(now()) @map("created_at")
+  execution    ExecutionLog @relation(fields: [execution_id], references: [id], onDelete: Cascade)
+
+  @@index([execution_id])
+  @@map("cost_records")
+}
+
+model Notification {
+  id         String               @id @default(uuid()) @db.Uuid
+  title      String
+  message    String
+  type       NotificationType     @default(information)
+  priority   NotificationPriority @default(medium)
+  read       Boolean              @default(false)
+  link       String               @default("")
+  created_at DateTime             @default(now()) @map("created_at")
+  updated_at DateTime             @updatedAt @map("updated_at")
+
+  @@index([read])
+  @@index([created_at])
+  @@map("notifications")
+}
+
+model Client {
+  id             String         @id @default(uuid()) @db.Uuid
+  workspace_id   String         @map("workspace_id") @db.Uuid
+  name           String
+  company        String         @default("")
+  email          String         @default("")
+  phone          String         @default("")
+  status         ClientStatus   @default(lead)
+  notes          String         @default("")
+  created_at     DateTime       @default(now()) @map("created_at")
+  updated_at     DateTime       @updatedAt @map("updated_at")
+  workspace      Workspace      @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  communications Communication[]
+  projects       Project[]
+
+  @@index([workspace_id])
+  @@index([status])
+  @@map("clients")
+}
+
+model Communication {
+  id          String               @id @default(uuid()) @db.Uuid
+  client_id   String               @map("client_id") @db.Uuid
+  channel     CommunicationChannel @default(email)
+  subject     String               @default("")
+  content     String               @default("")
+  occurred_at DateTime             @default(now()) @map("occurred_at")
+  created_at  DateTime             @default(now()) @map("created_at")
+  client      Client               @relation(fields: [client_id], references: [id], onDelete: Cascade)
+
+  @@index([client_id])
+  @@index([occurred_at])
+  @@map("communications")
+}
