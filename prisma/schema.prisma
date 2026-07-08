@@ -33,6 +33,7 @@ enum StageStatus {
 enum TaskStatus {
   todo
   running
+  waiting_external
   review
   done
   blocked
@@ -103,8 +104,28 @@ enum CommunicationChannel {
 }
 
 enum ProjectType {
-  development
-  business
+  production
+}
+
+enum ProjectTemplate {
+  lp_static
+  lp_form
+  corporate
+  design_only
+  custom_blank
+}
+
+enum StageExecutionMode {
+  internal_ai
+  external_handoff
+  human_handoff
+  skip
+}
+
+enum ArtifactContentKind {
+  markdown
+  url
+  file
 }
 
 model User {
@@ -138,8 +159,9 @@ model Project {
   client_id    String?       @map("client_id") @db.Uuid
   name         String
   description  String        @default("")
-  type         ProjectType   @default(development)
-  status       ProjectStatus @default(draft)
+  type         ProjectType     @default(production)
+  template     ProjectTemplate @default(lp_static)
+  status       ProjectStatus   @default(draft)
   deadline     DateTime?
   created_at   DateTime      @default(now()) @map("created_at")
   updated_at   DateTime      @updatedAt @map("updated_at")
@@ -175,9 +197,10 @@ model Stage {
   id          String      @id @default(uuid()) @db.Uuid
   workflow_id String      @map("workflow_id") @db.Uuid
   name        String
-  order       Int         @default(0)
-  status      StageStatus @default(pending)
-  workflow    Workflow    @relation(fields: [workflow_id], references: [id], onDelete: Cascade)
+  order           Int                @default(0)
+  status          StageStatus        @default(pending)
+  execution_mode  StageExecutionMode @default(internal_ai)
+  workflow        Workflow           @relation(fields: [workflow_id], references: [id], onDelete: Cascade)
   tasks       Task[]
 
   @@index([workflow_id])
@@ -258,10 +281,14 @@ model Memory {
 model Artifact {
   id         String   @id @default(uuid()) @db.Uuid
   task_id    String   @map("task_id") @db.Uuid
-  type       String
-  name       String
-  content    String   @default("")
-  version    String   @default("1.0.0")
+  type         String
+  name         String
+  content      String              @default("")
+  content_kind ArtifactContentKind @default(markdown)
+  external_url String?
+  file_path    String?
+  mime_type    String?
+  version      String              @default("1.0.0")
   created_at DateTime @default(now()) @map("created_at")
   task       Task     @relation(fields: [task_id], references: [id], onDelete: Cascade)
 

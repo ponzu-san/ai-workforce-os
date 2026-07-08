@@ -6,7 +6,13 @@ export type {
 } from "@/types";
 
 export type ProjectStatus = "draft" | "active" | "completed" | "archived";
-export type TaskStatus = "todo" | "running" | "review" | "done" | "blocked";
+export type TaskStatus =
+  | "todo"
+  | "running"
+  | "waiting_external"
+  | "review"
+  | "done"
+  | "blocked";
 export type TaskPriority = "critical" | "high" | "medium" | "low";
 export type ApprovalStatus = "pending" | "approved" | "rejected";
 export type WorkflowStatus =
@@ -25,19 +31,88 @@ export type CommunicationChannel =
   | "chat"
   | "phone"
   | "other";
-export type ProjectType = "development" | "business";
+export type ProjectType = "production";
+
+export type ProjectTemplate =
+  | "lp_static"
+  | "lp_form"
+  | "corporate"
+  | "design_only"
+  | "custom_blank";
+
+export type StageExecutionMode =
+  | "internal_ai"
+  | "external_handoff"
+  | "human_handoff"
+  | "skip";
+
+export type ArtifactContentKind = "markdown" | "url" | "file";
+
+export type PipelineStepStatus = "done" | "run" | "wait";
+
+export type ProjectNextActionType =
+  | "review_artifact"
+  | "register_external"
+  | "start_and_execute"
+  | "execute_next"
+  | "view_artifacts"
+  | "view_workflow"
+  | "create_project";
+
+export interface PipelineStep {
+  order: number;
+  stepNumber: string;
+  name: string;
+  status: PipelineStepStatus;
+  previewTaskTitle: string | null;
+}
+
+export interface ProjectNextAction {
+  type: ProjectNextActionType;
+  labelKey:
+    | "reviewContent"
+    | "registerExternal"
+    | "startFirstStep"
+    | "advanceStep"
+    | "viewArtifacts"
+    | "viewWorkflow"
+    | "createProject";
+  workflowId?: string;
+  approvalId?: string;
+  artifactId?: string;
+  taskId?: string;
+  taskTitle?: string;
+  href?: string;
+}
+
+export interface ProjectPipelineView {
+  projectId: string;
+  projectName: string;
+  projectStatus: ProjectStatus;
+  workflowId: string;
+  workflowName: string;
+  workflowStatus: WorkflowStatus;
+  progressPercent: number;
+  completedTasks: number;
+  totalTasks: number;
+  currentStage: {
+    order: number;
+    stepNumber: string;
+    name: string;
+    taskTitle: string;
+  } | null;
+  steps: PipelineStep[];
+  nextAction: ProjectNextAction;
+}
 
 export interface DashboardSummary {
-  todayTasks: TaskSummary[];
-  activeProjects: ProjectSummary[];
+  projectPipelines: ProjectPipelineView[];
+  completedPipelines: ProjectPipelineView[];
   pendingApprovals: ApprovalSummary[];
-  recentExecutions: ExecutionSummary[];
   stats: {
     projectCount: number;
-    taskCount: number;
     pendingApprovalCount: number;
-    clientCount: number;
-    leadCount: number;
+    overallProgressPercent: number;
   };
 }
 
@@ -63,6 +138,11 @@ export interface ApprovalSummary {
   id: string;
   taskTitle: string;
   projectName: string;
+  projectId: string;
+  workflowId: string;
+  taskId: string;
+  artifactId: string | null;
+  stageOrder: number;
   status: ApprovalStatus;
   created_at: Date;
 }

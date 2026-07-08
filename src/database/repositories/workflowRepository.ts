@@ -39,4 +39,13 @@ export const workflowRepository = {
       orderBy: { order: "asc" },
     });
   },
+
+  async findStageByIdForProject(stageId: string, projectId: string) {
+    return prisma.stage.findFirst({
+      where: {
+        id: stageId,
+        workflow: { project_id: projectId },
+      },
+    });
+  },
 };

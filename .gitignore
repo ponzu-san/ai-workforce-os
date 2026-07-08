@@ -39,6 +39,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# prisma
+# uploads (artifact files)
+/public/uploads/artifacts/*
+!/public/uploads/artifacts/.gitkeep
+
 /prisma/*.db
 /prisma/*.db-journal

@@ -49,6 +49,25 @@ export const artifactRepository = {
     });
   },
 
+  async findByTaskId(taskId: string) {
+    return prisma.artifact.findFirst({
+      where: { task_id: taskId },
+      orderBy: { created_at: "desc" },
+      include: {
+        task: {
+          include: {
+            stage: {
+              include: {
+                workflow: { include: { project: true } },
+              },
+            },
+            assigned_agent: true,
+          },
+        },
+      },
+    });
+  },
+
   async findByWorkflowId(workflowId: string) {
     return prisma.artifact.findMany({
       where: {

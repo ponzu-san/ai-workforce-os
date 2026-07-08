@@ -1,84 +1,141 @@
+import { agentRepository } from "@/database/repositories/agentRepository";
 import { approvalRepository } from "@/database/repositories/approvalRepository";
-import {
-  agentRepository,
-  executionLogRepository,
-} from "@/database/repositories/agentRepository";
-import { clientRepository } from "@/database/repositories/clientRepository";
+import { artifactRepository } from "@/database/repositories/artifactRepository";
 import { projectRepository } from "@/database/repositories/projectRepository";
-import { taskRepository } from "@/database/repositories/taskRepository";
 import { workspaceRepository } from "@/database/repositories/workspaceRepository";
-import type { DashboardSummary } from "@/types/domain";
+import {
+  buildProjectPipelineView,
+  type PendingApprovalInput,
+} from "@/lib/workflow/pipelineView";
+import type { DashboardSummary, ProjectPipelineView } from "@/types/domain";
+
+async function mapPendingApprovalsByProject(
+  approvals: Awaited<ReturnType<typeof approvalRepository.findPending>>,
+): Promise<Map<string, PendingApprovalInput>> {
+  const map = new Map<string, PendingApprovalInput>();
+
+  for (const approval of approvals) {
+    const projectId = approval.task.stage.workflow.project.id;
+    if (map.has(projectId)) continue;
+
+    const artifact = await artifactRepository.findByTaskId(approval.task_id);
+
+    map.set(projectId, {
+      id: approval.id,
+      projectId,
+      workflowId: approval.task.stage.workflow.id,
+      taskId: approval.task_id,
+      taskTitle: approval.task.title,
+      artifactId: artifact?.id ?? null,
+      stageOrder: approval.task.stage.order,
+    });
+  }
+
+  return map;
+}
+
+function calculateOverallProgress(pipelines: ProjectPipelineView[]): number {
+  if (pipelines.length === 0) return 0;
+
+  const totalPercent = pipelines.reduce(
+    (sum, pipeline) => sum + pipeline.progressPercent,
+    0,
+  );
+  return Math.round(totalPercent / pipelines.length);
+}
 
 export const dashboardService = {
   async getSummary(): Promise<DashboardSummary> {
     const workspace = await workspaceRepository.findDefault();
     const workspaceId = workspace?.id;
 
-    const [todayTasks, activeProjects, pendingApprovals, recentExecutions, stats] =
+    const [projects, pendingApprovals, pendingApprovalCount, projectCount] =
       await Promise.all([
-        taskRepository.findTodayTasks(8),
         workspaceId
-          ? projectRepository.findAllByWorkspace(workspaceId)
+          ? projectRepository.findAllWithPipelineByWorkspace(workspaceId)
           : Promise.resolve([]),
         approvalRepository.findPending(),
-        executionLogRepository.findRecent(5),
-        Promise.all([
-          workspaceId
-            ? projectRepository.countByWorkspace(workspaceId)
-            : Promise.resolve(0),
-          taskRepository.count(),
-          approvalRepository.countPending(),
-          workspaceId
-            ? clientRepository.countByWorkspace(workspaceId)
-            : Promise.resolve(0),
-          workspaceId
-            ? clientRepository.countLeads(workspaceId)
-            : Promise.resolve(0),
-        ]),
+        approvalRepository.countPending(),
+        workspaceId
+          ? projectRepository.countByWorkspace(workspaceId)
+          : Promise.resolve(0),
       ]);
 
-    const [projectCount, taskCount, pendingApprovalCount, clientCount, leadCount] =
-      stats;
+    const pendingByProject = await mapPendingApprovalsByProject(pendingApprovals);
+    const projectPipelines: ProjectPipelineView[] = [];
+    const completedPipelines: ProjectPipelineView[] = [];
 
-    return {
-      todayTasks: todayTasks.map((task) => ({
-        id: task.id,
-        title: task.title,
-        status: task.status,
-        priority: task.priority,
-        projectName: task.stage.workflow.project.name,
-        projectId: task.stage.workflow.project.id,
-        agentName: task.assigned_agent?.name ?? null,
-      })),
-      activeProjects: activeProjects
-        .filter((p) => p.status === "active" || p.status === "draft")
-        .slice(0, 6)
-        .map((project) => ({
+    for (const project of projects) {
+      const pipeline = buildProjectPipelineView(
+        {
           id: project.id,
           name: project.name,
           status: project.status,
-          taskCount: project.workflows.reduce(
-            (sum, w) =>
-              sum + w.stages.reduce((s, st) => s + st._count.tasks, 0),
-            0,
-          ),
-          updated_at: project.updated_at,
-        })),
-      pendingApprovals: pendingApprovals.map((approval) => ({
-        id: approval.id,
-        taskTitle: approval.task.title,
-        projectName: approval.task.stage.workflow.project.name,
-        status: approval.status,
-        created_at: approval.created_at,
-      })),
-      recentExecutions: recentExecutions.map((log) => ({
-        id: log.id,
-        agentName: log.agent.name,
-        model: log.model,
-        status: log.status,
-        created_at: log.created_at,
-      })),
-      stats: { projectCount, taskCount, pendingApprovalCount, clientCount, leadCount },
+          workflows: project.workflows.map((workflow) => ({
+            id: workflow.id,
+            name: workflow.name,
+            status: workflow.status,
+            current_stage_id: workflow.current_stage_id,
+            stages: workflow.stages.map((stage) => ({
+              id: stage.id,
+              name: stage.name,
+              order: stage.order,
+              status: stage.status,
+              tasks: stage.tasks.map((task) => ({
+                id: task.id,
+                title: task.title,
+                status: task.status,
+              })),
+            })),
+          })),
+        },
+        pendingByProject.get(project.id) ?? null,
+      );
+
+      if (!pipeline) continue;
+
+      if (
+        project.status === "completed" ||
+        pipeline.workflowStatus === "completed"
+      ) {
+        completedPipelines.push(pipeline);
+        continue;
+      }
+
+      if (project.status === "active" || project.status === "draft") {
+        projectPipelines.push(pipeline);
+      }
+    }
+
+    const allPipelines = [...projectPipelines, ...completedPipelines];
+
+    const pendingWithArtifacts = await Promise.all(
+      pendingApprovals.map(async (approval) => {
+        const artifact = await artifactRepository.findByTaskId(approval.task_id);
+        return {
+          id: approval.id,
+          taskTitle: approval.task.title,
+          projectName: approval.task.stage.workflow.project.name,
+          projectId: approval.task.stage.workflow.project.id,
+          workflowId: approval.task.stage.workflow.id,
+          taskId: approval.task_id,
+          artifactId: artifact?.id ?? null,
+          stageOrder: approval.task.stage.order,
+          status: approval.status,
+          created_at: approval.created_at,
+        };
+      }),
+    );
+
+    return {
+      projectPipelines,
+      completedPipelines,
+      pendingApprovals: pendingWithArtifacts,
+      stats: {
+        projectCount,
+        pendingApprovalCount,
+        overallProgressPercent: calculateOverallProgress(allPipelines),
+      },
     };
   },
 };

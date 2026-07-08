@@ -7,6 +7,7 @@ import { workflowRepository } from "@/database/repositories/workflowRepository";
 
 const createTaskSchema = z.object({
   project_id: z.string().uuid(),
+  stage_id: z.string().uuid().optional(),
   title: z.string().min(1, "タイトルは必須です"),
   description: z.string().optional(),
   priority: z.enum(["critical", "high", "medium", "low"]).optional(),
@@ -32,11 +33,14 @@ export const taskService = {
 
   async create(input: z.infer<typeof createTaskSchema>) {
     const data = createTaskSchema.parse(input);
-    const stage = await workflowRepository.getDefaultStageForProject(
-      data.project_id,
-    );
+    const stage = data.stage_id
+      ? await workflowRepository.findStageByIdForProject(
+          data.stage_id,
+          data.project_id,
+        )
+      : await workflowRepository.getDefaultStageForProject(data.project_id);
     if (!stage) {
-      throw new Error("Default stage not found for project");
+      throw new Error("Stage not found for project");
     }
 
     const secretary = await agentRepository.findSecretary();

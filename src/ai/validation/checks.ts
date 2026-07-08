@@ -1,4 +1,4 @@
-import { DEV_TEAM_STAGE_COUNT } from "@/ai/workflow/devTeamTemplate";
+import { PRODUCTION_STAGE_COUNT } from "@/ai/workflow/productionWorkflowTemplate";
 import { executeRouterRequest } from "@/ai/router/executeRequest";
 import { workflowEngine } from "@/ai/workflow/workflowEngine";
 import { prisma } from "@/database/client";
@@ -122,12 +122,12 @@ export async function checkDemoProjectStructure(): Promise<ValidationCheckResult
   const tasks = stages.flatMap((s) => s.tasks);
   const unassigned = tasks.filter((t) => !t.assigned_agent_id);
 
-  if (stages.length < DEV_TEAM_STAGE_COUNT) {
+  if (stages.length < PRODUCTION_STAGE_COUNT) {
     return result(
       "demo_project",
       "Demo Project Structure",
       "warn",
-      `Stage が ${stages.length} 件（Phase 3 想定は ${DEV_TEAM_STAGE_COUNT}）。npm run db:seed を実行してください。`,
+      `Stage が ${stages.length} 件（統合ワークフロー想定は ${PRODUCTION_STAGE_COUNT}）。npm run db:seed を実行してください。`,
       start,
     );
   }

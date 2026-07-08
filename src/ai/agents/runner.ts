@@ -1,8 +1,12 @@
 import { agentRepository } from "@/database/repositories/agentRepository";
 import { memoryRepository } from "@/database/repositories/agentRepository";
 import { artifactRepository } from "@/database/repositories/artifactRepository";
-import { getAgentDefinition } from "@/ai/agents/registry";
+import {
+  getAgentDefinition,
+  resolveSystemPrompt,
+} from "@/ai/agents/registry";
 import { executeRouterRequest } from "@/ai/router/executeRequest";
+import type { StageExecutionMode } from "@/types/domain";
 
 export interface AgentRunResult {
   content: string;
@@ -20,10 +24,18 @@ function formatPriorArtifacts(
   if (prior.length === 0) return "";
 
   return prior
-    .map(
-      (a) =>
-        `### ${a.name} (${a.task.stage.name} / ${a.task.assigned_agent?.name ?? "Agent"})\n${a.content.slice(0, 1500)}${a.content.length > 1500 ? "\n...(truncated)" : ""}`,
-    )
+    .map((a) => {
+      const header = `### ${a.name} (${a.task.stage.name} / ${a.task.assigned_agent?.name ?? "Agent"})`;
+      if (a.content_kind === "url" && a.external_url) {
+        return `${header}\nURL: ${a.external_url}${a.content ? `\n${a.content}` : ""}`;
+      }
+      if (a.content_kind === "file" && a.file_path) {
+        return `${header}\nFile: ${a.file_path}${a.content ? `\n${a.content}` : ""}`;
+      }
+      const body = a.content.slice(0, 1500);
+      const truncated = a.content.length > 1500 ? "\n...(truncated)" : "";
+      return `${header}\n${body}${truncated}`;
+    })
     .join("\n\n");
 }
 
@@ -33,6 +45,8 @@ export async function runAgentForTask(task: {
   description: string;
   assigned_agent: { id: string; role: string; name: string } | null;
   stage: {
+    name: string;
+    execution_mode: StageExecutionMode;
     workflow: {
       id: string;
       project: {
@@ -59,6 +73,7 @@ export async function runAgentForTask(task: {
   const definition = getAgentDefinition(agent.role);
   const project = task.stage.workflow.project;
   const workflowId = task.stage.workflow.id;
+  const executionMode = task.stage.execution_mode;
 
   const [memories, priorArtifacts, userMemories] = await Promise.all([
     memoryRepository.findByProject(project.id),
@@ -81,10 +96,23 @@ export async function runAgentForTask(task: {
         .join("\n")
     : "";
 
+  const systemPrompt = resolveSystemPrompt(
+    agent.role,
+    task.stage.name,
+    executionMode,
+  );
+
+  const handoffNote =
+    executionMode === "external_handoff" || executionMode === "human_handoff"
+      ? "\n\nThis is a handoff task. Produce a complete handoff document. The user will register external deliverables (URL or files) after your output."
+      : "";
+
   const context = [
     `Project: ${project.name}`,
     `Description: ${project.description}`,
     clientContext,
+    `Stage: ${task.stage.name}`,
+    `Execution Mode: ${executionMode}`,
     `Task: ${task.title}`,
     `Objective: ${task.description}`,
     memories.length > 0
@@ -109,19 +137,24 @@ export async function runAgentForTask(task: {
     agentId: agent.id,
     taskId: task.id,
     messages: [
-      { role: "system", content: definition.systemPrompt },
+      { role: "system", content: systemPrompt },
       {
         role: "user",
-        content: `Execute the following task and produce a complete deliverable.\n\n${context}`,
+        content: `Execute the following task and produce a complete deliverable.${handoffNote}\n\n${context}`,
       },
     ],
   });
+
+  const artifactType =
+    executionMode === "external_handoff" || executionMode === "human_handoff"
+      ? "handoff"
+      : definition.artifactType;
 
   return {
     content: result.content,
     model: result.model,
     provider: result.provider,
-    artifactType: definition.artifactType,
+    artifactType,
     artifactName: `${task.title} - ${agent.name}`,
   };
 }

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { workflowRepository } from "@/database/repositories/workflowRepository";
 import { clientService } from "@/services/clientService";
+import { buildProjectEntryPath } from "@/services/navigationRedirectService";
 
 export async function createClientAction(formData: FormData): Promise<void> {
   const name = formData.get("name");
@@ -63,7 +64,7 @@ export async function createBusinessProjectAction(
   const name = formData.get("name");
   if (typeof clientId !== "string" || typeof name !== "string") return;
 
-  let workflowId: string | null = null;
+  let projectId: string | null = null;
   let errorMessage: string | null = null;
 
   try {
@@ -76,7 +77,7 @@ export async function createBusinessProjectAction(
           : "",
     });
     const workflows = await workflowRepository.findByProjectId(project.id);
-    workflowId = workflows[0]?.id ?? null;
+    projectId = workflows[0] ? project.id : null;
 
     revalidatePath("/clients");
     revalidatePath("/projects");
@@ -88,13 +89,13 @@ export async function createBusinessProjectAction(
       error instanceof Error ? error.message : "Project creation failed";
   }
 
-  if (errorMessage || !workflowId) {
+  if (errorMessage || !projectId) {
     redirect(
       `/clients/${clientId}?error=${encodeURIComponent(errorMessage ?? "Workflow not found")}`,
     );
   }
 
-  redirect(`/workflows/${workflowId}`);
+  redirect(buildProjectEntryPath(projectId));
 }
 
 export async function activateClientAction(formData: FormData): Promise<void> {

@@ -1,5 +1,7 @@
 import type { TaskKind } from "@/ai/router/types";
 import { SECRETARY_SYSTEM_PROMPT } from "@/ai/agents/secretary/prompt";
+import type { StageExecutionMode } from "@/types/domain";
+import { PRODUCTION_STAGE_NAMES } from "@/ai/workflow/productionWorkflowTemplate";
 
 export interface AgentDefinition {
   role: string;
@@ -13,9 +15,36 @@ Analyze requirements, create plans, and write clear specifications.
 Output structured markdown with: Summary, Requirements, Acceptance Criteria, Risks.
 Respond in Japanese unless user writes in another language.`;
 
-const DESIGNER_PROMPT = `You are Designer AI specializing in UI/UX.
+const DESIGNER_INTERNAL_PROMPT = `You are Designer AI specializing in UI/UX.
 Create design proposals, wireframe descriptions, and design system guidelines.
 Output markdown with: Design Goals, Layout, Components, Color/Typography, Notes.
+Respond in Japanese unless user writes in another language.`;
+
+const DESIGNER_EXTERNAL_TOOL_PROMPT = `You are Designer AI preparing handoff for external design tools (Figma, v0, Cursor AI, ChatGPT, Gemini).
+Do NOT produce final visual designs yourself. Instead output:
+1. Tool-specific prompts (sections for Figma, v0, Cursor, ChatGPT)
+2. Screen inventory with purpose per page
+3. Acceptance criteria for design deliverables
+4. Checklist of what the user must register back (Figma URL, exports, etc.)
+Respond in Japanese unless user writes in another language.`;
+
+const DESIGNER_HUMAN_HANDOFF_PROMPT = `You are Designer AI writing a design brief for a human designer.
+Output a professional design specification document including:
+1. Project overview and target users
+2. Page list with goals per page
+3. Required sections (hero, CTA, pricing, etc.)
+4. Tone & manner, brand constraints, reference URLs
+5. Deliverables expected from the designer (Figma frames, assets)
+6. Acceptance criteria for client approval
+Respond in Japanese unless user writes in another language.`;
+
+const EXTERNAL_DEV_HANDOFF_PROMPT = `You are Frontend AI preparing handoff for external coding (Cursor, IDE, etc.).
+The user will implement code outside this platform. Output:
+1. Implementation brief based on prior requirements and design artifacts
+2. Tech stack recommendations (Next.js, etc.)
+3. File/component structure guidance
+4. Cursor/IDE prompts the user can paste
+5. Checklist: GitHub URL, production URL, or files to register when done
 Respond in Japanese unless user writes in another language.`;
 
 const FRONTEND_PROMPT = `You are Frontend AI specializing in React and Next.js.
@@ -30,10 +59,16 @@ Use prior requirement and frontend artifacts when provided.
 Output markdown with: API Design, Data Model, Implementation Plan, Code blocks.
 Respond in Japanese unless user writes in another language.`;
 
-const QA_PROMPT = `You are QA AI.
+const QA_INTERNAL_PROMPT = `You are QA AI.
 Review all prior deliverables (requirements, design, frontend, backend).
 Create test checklists and identify bugs or gaps.
 Output markdown with: Test Plan, Issues Found, Recommendations, Pass/Fail suggestion.
+Respond in Japanese unless user writes in another language.`;
+
+const QA_EXTERNAL_PROMPT = `You are QA AI reviewing externally produced design and code.
+Focus on: design consistency, content accuracy, SEO basics, form behavior, accessibility, pre-launch checklist.
+Use Figma URLs, GitHub URLs, and prior artifacts when provided.
+Output markdown with: Review Summary, Issues, SEO/Content checks, Pass/Fail suggestion.
 Respond in Japanese unless user writes in another language.`;
 
 const SALES_PROMPT = `You are Sales AI.
@@ -43,13 +78,18 @@ Output markdown with: Executive Summary, Scope, Estimate, Timeline, Next Steps.
 Respond in Japanese unless user writes in another language.`;
 
 const LEGAL_PROMPT = `You are Legal AI.
-Review privacy, contracts, and compliance risks.
-Output markdown with: Risk Summary, Compliance Checklist, Recommendations.
+Review privacy policy needs, terms of use, cookie consent, form PII handling, and compliance risks.
+Output markdown with: Risk Summary, Required Documents, Compliance Checklist, Recommendations.
 Respond in Japanese unless user writes in another language.`;
 
 const RELEASE_PROMPT = `You are Release AI.
-Prepare release notes, deployment checklists, and handover documentation.
-Output markdown with: Release Summary, Checklist, Rollback Plan, Sign-off.
+Prepare delivery package: artifact index, client handover doc, deployment checklist, sign-off template.
+Output markdown with: Delivery Summary, Artifact Index, Handover Notes, Sign-off Request.
+Respond in Japanese unless user writes in another language.`;
+
+const INFRA_PROMPT = `You are Release AI focusing on infrastructure.
+Prepare DNS, SSL, environment variables, and deployment checklists.
+Output markdown with: Infra Checklist, Environment Setup, Deployment Steps, Rollback Plan.
 Respond in Japanese unless user writes in another language.`;
 
 export const agentRegistry: Record<string, AgentDefinition> = {
@@ -68,7 +108,7 @@ export const agentRegistry: Record<string, AgentDefinition> = {
   designer: {
     role: "designer",
     taskKind: "planning",
-    systemPrompt: DESIGNER_PROMPT,
+    systemPrompt: DESIGNER_INTERNAL_PROMPT,
     artifactType: "design",
   },
   frontend: {
@@ -86,7 +126,7 @@ export const agentRegistry: Record<string, AgentDefinition> = {
   qa: {
     role: "qa",
     taskKind: "documentation",
-    systemPrompt: QA_PROMPT,
+    systemPrompt: QA_INTERNAL_PROMPT,
     artifactType: "report",
   },
   sales: {
@@ -109,6 +149,39 @@ export const agentRegistry: Record<string, AgentDefinition> = {
   },
 };
 
+export function getDesignerPrompt(mode: StageExecutionMode): string {
+  if (mode === "human_handoff") return DESIGNER_HUMAN_HANDOFF_PROMPT;
+  if (mode === "external_handoff") return DESIGNER_EXTERNAL_TOOL_PROMPT;
+  return DESIGNER_INTERNAL_PROMPT;
+}
+
+export function resolveSystemPrompt(
+  role: string,
+  stageName: string,
+  executionMode: StageExecutionMode,
+): string {
+  if (role === "designer") {
+    return getDesignerPrompt(executionMode);
+  }
+
+  if (
+    stageName === PRODUCTION_STAGE_NAMES.EXTERNAL_DEV &&
+    executionMode === "external_handoff"
+  ) {
+    return EXTERNAL_DEV_HANDOFF_PROMPT;
+  }
+
+  if (role === "qa" && executionMode === "external_handoff") {
+    return QA_EXTERNAL_PROMPT;
+  }
+
+  if (stageName === PRODUCTION_STAGE_NAMES.INFRA) {
+    return INFRA_PROMPT;
+  }
+
+  return getAgentDefinition(role).systemPrompt;
+}
+
 export function getAgentDefinition(role: string): AgentDefinition {
   return agentRegistry[role] ?? agentRegistry.secretary;
 }
@@ -122,9 +195,24 @@ export function suggestAgentRoleForTask(
     text.includes("proposal") ||
     text.includes("estimate") ||
     text.includes("sales") ||
-    text.includes("lead")
+    text.includes("lead") ||
+    text.includes("提案")
   ) {
     return "sales";
+  }
+  if (
+    text.includes("legal") ||
+    text.includes("compliance") ||
+    text.includes("法務")
+  ) {
+    return "legal";
+  }
+  if (
+    text.includes("delivery") ||
+    text.includes("release") ||
+    text.includes("納品")
+  ) {
+    return "release";
   }
   if (text.includes("test") || text.includes("qa") || text.includes("review")) {
     return "qa";
@@ -133,7 +221,8 @@ export function suggestAgentRoleForTask(
     text.includes("design") ||
     text.includes("wireframe") ||
     text.includes("ui/ux") ||
-    text.includes("figma")
+    text.includes("figma") ||
+    text.includes("デザイン")
   ) {
     return "designer";
   }
@@ -149,16 +238,22 @@ export function suggestAgentRoleForTask(
     text.includes("implement") ||
     text.includes("ui") ||
     text.includes("frontend") ||
-    text.includes("react")
+    text.includes("react") ||
+    text.includes("外部コーディング") ||
+    text.includes("cursor")
   ) {
     return "frontend";
   }
   if (
     text.includes("requirement") ||
     text.includes("plan") ||
-    text.includes("spec")
+    text.includes("spec") ||
+    text.includes("契約")
   ) {
     return "pm";
+  }
+  if (text.includes("infra") || text.includes("インフラ")) {
+    return "release";
   }
   return "pm";
 }

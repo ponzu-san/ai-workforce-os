@@ -20,6 +20,23 @@ export const approvalRepository = {
     });
   },
 
+  async findPendingByTaskId(taskId: string) {
+    return prisma.approval.findFirst({
+      where: { task_id: taskId, status: "pending" },
+      include: {
+        task: {
+          include: {
+            stage: {
+              include: {
+                workflow: { include: { project: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+  },
+
   async findById(id: string) {
     return prisma.approval.findUnique({
       where: { id },

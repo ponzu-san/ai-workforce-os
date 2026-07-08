@@ -9,9 +9,13 @@ import {
 } from "@/components/ui/card";
 import { ja } from "@/lib/labels/ja";
 import { analyticsService } from "@/services/analyticsService";
+import { navigationRedirectService } from "@/services/navigationRedirectService";
 
 export default async function AnalyticsPage() {
-  const data = await analyticsService.getBusinessDashboard();
+  const [data, artifactsPath] = await Promise.all([
+    analyticsService.getBusinessDashboard(),
+    navigationRedirectService.resolveArtifactsEntryPath(),
+  ]);
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
@@ -64,7 +68,7 @@ export default async function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">{data.productivity.artifacts}</p>
-            <Link href="/artifacts" className="text-xs text-primary underline">
+            <Link href={artifactsPath} className="text-xs text-primary underline">
               {ja.common.openList}
             </Link>
           </CardContent>

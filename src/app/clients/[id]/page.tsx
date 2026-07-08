@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { StatusBadge } from "@/components/common/StatusBadge";
+import { PageNotice } from "@/components/common/PageNotice";
 import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/submit-button";
 import {
@@ -14,19 +15,22 @@ import {
 import {
   activateClientAction,
   addCommunicationAction,
-  createBusinessProjectAction,
 } from "@/features/client/actions";
+import { ProjectCreateForm } from "@/features/project/components/ProjectCreateForm";
 import { ja, tStatus } from "@/lib/labels/ja";
 import { clientService } from "@/services/clientService";
 
 interface ClientDetailPageProps {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ error?: string }>;
 }
 
 export default async function ClientDetailPage({
   params,
+  searchParams,
 }: ClientDetailPageProps) {
   const { id } = await params;
+  const query = await searchParams;
   const client = await clientService.getById(id);
   if (!client) notFound();
 
@@ -47,6 +51,8 @@ export default async function ClientDetailPage({
         </div>
       </div>
 
+      <PageNotice error={query.error} />
+
       {client.status === "lead" && (
         <form action={activateClientAction}>
           <input type="hidden" name="client_id" value={client.id} />
@@ -63,22 +69,11 @@ export default async function ClientDetailPage({
           <CardDescription>{ja.client.businessProjectDesc}</CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={createBusinessProjectAction} className="space-y-3">
-            <input type="hidden" name="client_id" value={client.id} />
-            <input
-              name="name"
-              placeholder={`${ja.client.projectName} *`}
-              required
-              defaultValue={`${client.company || client.name} 案件`}
-              className="w-full rounded-md border border-input px-3 py-2 text-sm"
-            />
-            <textarea
-              name="description"
-              placeholder={ja.client.projectDesc}
-              className="min-h-16 w-full rounded-md border border-input px-3 py-2 text-sm"
-            />
-            <SubmitButton label={ja.client.createBusinessProject} />
-          </form>
+          <ProjectCreateForm
+            clients={[]}
+            hiddenClientId={client.id}
+            defaultName={`${client.company || client.name} 案件`}
+          />
         </CardContent>
       </Card>
 
@@ -165,7 +160,7 @@ export default async function ClientDetailPage({
                   <StatusBadge value={project.status} />
                   {project.workflows[0] && (
                     <Button size="sm" asChild>
-                      <Link href={`/workflows/${project.workflows[0].id}`}>
+                      <Link href={`/p/${project.id}`}>
                         {ja.workflow.openWorkflow}
                       </Link>
                     </Button>

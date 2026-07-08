@@ -10,9 +10,13 @@ import {
 } from "@/components/ui/card";
 import { ja } from "@/lib/labels/ja";
 import { agentService } from "@/services/dashboardService";
+import { navigationRedirectService } from "@/services/navigationRedirectService";
 
 export default async function AgentsPage() {
-  const agents = await agentService.listAgents();
+  const [agents, stagePath] = await Promise.all([
+    agentService.listAgents(),
+    navigationRedirectService.resolveActiveProjectStagePath(),
+  ]);
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
@@ -49,7 +53,7 @@ export default async function AgentsPage() {
       <Card>
         <CardContent className="p-4 text-sm text-muted-foreground">
           {ja.agents.noDirectComm}
-          <Link href="/workflows" className="ml-1 text-primary underline">
+          <Link href={stagePath} className="ml-1 text-primary underline">
             {ja.agents.goWorkflows}
           </Link>
         </CardContent>

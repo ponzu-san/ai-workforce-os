@@ -27,6 +27,9 @@ const createBusinessProjectSchema = z.object({
   client_id: z.string().uuid(),
   name: z.string().min(1),
   description: z.string().optional(),
+  template: z
+    .enum(["lp_static", "lp_form", "corporate", "design_only", "custom_blank"])
+    .optional(),
 });
 
 export const clientService = {
@@ -74,10 +77,10 @@ export const clientService = {
     return projectRepository.create({
       workspace_id: workspace.id,
       name: data.name,
-      description: data.description ?? `Business project for ${client.name}`,
+      description: data.description ?? `制作プロジェクト: ${client.name}`,
       status: "active",
       client_id: data.client_id,
-      type: "business",
+      template: data.template ?? "lp_static",
     });
   },
 

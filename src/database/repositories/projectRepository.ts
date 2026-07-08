@@ -1,12 +1,13 @@
-import type { ProjectStatus, ProjectType } from "@/types/domain";
-import { BUSINESS_WORKFLOW } from "@/ai/workflow/businessWorkflowTemplate";
-import { DEV_TEAM_WORKFLOW } from "@/ai/workflow/devTeamTemplate";
+import type {
+  ProjectStatus,
+  ProjectTemplate,
+  StageExecutionMode,
+} from "@/types/domain";
+import { PRODUCTION_WORKFLOW } from "@/ai/workflow/productionWorkflowTemplate";
+import type { ProductionStageName } from "@/ai/workflow/productionWorkflowTemplate";
+import { resolveStageModes } from "@/ai/workflow/productionTemplates";
 import { prisma } from "@/database/client";
 import { agentRepository } from "@/database/repositories/agentRepository";
-
-function getWorkflowTemplate(type: ProjectType) {
-  return type === "business" ? BUSINESS_WORKFLOW : DEV_TEAM_WORKFLOW;
-}
 
 export const projectRepository = {
   async findAllByWorkspace(workspaceId: string) {
@@ -23,6 +24,30 @@ export const projectRepository = {
               },
             },
           },
+        },
+      },
+    });
+  },
+
+  async findAllWithPipelineByWorkspace(workspaceId: string) {
+    return prisma.project.findMany({
+      where: { workspace_id: workspaceId },
+      orderBy: { updated_at: "desc" },
+      include: {
+        client: true,
+        workflows: {
+          include: {
+            stages: {
+              include: {
+                tasks: {
+                  include: { assigned_agent: true },
+                  orderBy: { created_at: "asc" },
+                },
+              },
+              orderBy: { order: "asc" },
+            },
+          },
+          orderBy: { created_at: "asc" },
         },
       },
     });
@@ -62,12 +87,14 @@ export const projectRepository = {
     status?: ProjectStatus;
     deadline?: Date | null;
     client_id?: string | null;
-    type?: ProjectType;
+    template?: ProjectTemplate;
+    stageModeOverrides?: Partial<Record<ProductionStageName, StageExecutionMode>>;
   }) {
     const agents = await agentRepository.findAll();
     const agentByRole = new Map(agents.map((a) => [a.role, a.id]));
-    const projectType = data.type ?? "development";
-    const template = getWorkflowTemplate(projectType);
+    const template = data.template ?? "lp_static";
+    const stageModes = resolveStageModes(template, data.stageModeOverrides);
+    const workflowTemplate = PRODUCTION_WORKFLOW;
 
     return prisma.$transaction(async (tx) => {
       const project = await tx.project.create({
@@ -76,7 +103,8 @@ export const projectRepository = {
           client_id: data.client_id ?? null,
           name: data.name,
           description: data.description ?? "",
-          type: projectType,
+          type: "production",
+          template,
           status: data.status ?? "draft",
           deadline: data.deadline ?? null,
         },
@@ -85,14 +113,15 @@ export const projectRepository = {
       await tx.workflow.create({
         data: {
           project_id: project.id,
-          name: template.name,
-          description: template.description,
+          name: workflowTemplate.name,
+          description: workflowTemplate.description,
           status: "planning",
           stages: {
-            create: template.stages.map((stage) => ({
+            create: workflowTemplate.stages.map((stage) => ({
               name: stage.name,
               order: stage.order,
               status: "pending",
+              execution_mode: stageModes[stage.name] ?? "internal_ai",
               tasks: {
                 create: {
                   title: stage.task.title,

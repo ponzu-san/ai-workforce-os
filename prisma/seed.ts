@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 
-import { DEV_TEAM_WORKFLOW } from "../src/ai/workflow/devTeamTemplate";
+import { PRODUCTION_WORKFLOW } from "../src/ai/workflow/productionWorkflowTemplate";
+import { resolveStageModes } from "../src/ai/workflow/productionTemplates";
 
 const prisma = new PrismaClient();
 
@@ -85,15 +86,18 @@ function agentIdByRole(role: string): string | undefined {
 }
 
 function buildWorkflowData() {
+  const stageModes = resolveStageModes("lp_static");
+
   return {
-    name: DEV_TEAM_WORKFLOW.name,
-    description: DEV_TEAM_WORKFLOW.description,
+    name: PRODUCTION_WORKFLOW.name,
+    description: PRODUCTION_WORKFLOW.description,
     status: "planning" as const,
     stages: {
-      create: DEV_TEAM_WORKFLOW.stages.map((stage) => ({
+      create: PRODUCTION_WORKFLOW.stages.map((stage) => ({
         name: stage.name,
         order: stage.order,
         status: "pending" as const,
+        execution_mode: stageModes[stage.name],
         tasks: {
           create: {
             title: stage.task.title,
@@ -121,7 +125,10 @@ async function ensureDemoProject(workspaceId: string) {
       data: {
         workspace_id: workspaceId,
         name: "Demo Project",
-        description: "AI Workforce OS デモプロジェクト（5ステージ開発チームワークフロー）",
+        description:
+          "AI Workforce OS デモプロジェクト（統合制作ワークフロー / LP静的）",
+        type: "production",
+        template: "lp_static",
         status: "active",
         workflows: { create: buildWorkflowData() },
       },
@@ -131,7 +138,7 @@ async function ensureDemoProject(workspaceId: string) {
       data: {
         project_id: project.id,
         type: "project",
-        content: "5ステージの開発チームワークフローを持つデモプロジェクト。",
+        content: "11ステージの統合制作ワークフロー（lp_static テンプレート）。",
         importance: 8,
         source: "seed",
       },
@@ -140,7 +147,14 @@ async function ensureDemoProject(workspaceId: string) {
   }
 
   const workflow = existingProject.workflows[0];
-  if (workflow && workflow.stages.length >= DEV_TEAM_WORKFLOW.stages.length) {
+  if (
+    workflow &&
+    workflow.stages.length >= PRODUCTION_WORKFLOW.stages.length
+  ) {
+    await prisma.project.update({
+      where: { id: existingProject.id },
+      data: { type: "production", template: "lp_static" },
+    });
     return;
   }
 
@@ -155,6 +169,11 @@ async function ensureDemoProject(workspaceId: string) {
     },
   });
 
+  await prisma.project.update({
+    where: { id: existingProject.id },
+    data: { type: "production", template: "lp_static" },
+  });
+
   await prisma.memory.deleteMany({
     where: { project_id: existingProject.id, source: "seed" },
   });
@@ -163,7 +182,7 @@ async function ensureDemoProject(workspaceId: string) {
     data: {
       project_id: existingProject.id,
       type: "project",
-      content: "Demo project with 5-stage Development Team workflow (Phase 3).",
+      content: "Demo project with unified production workflow (lp_static).",
       importance: 8,
       source: "seed",
     },
@@ -183,7 +202,7 @@ async function ensureDemoClient(workspaceId: string) {
       company: "Demo Client Corp",
       email: "contact@demo-client.example",
       status: "lead",
-      notes: "Phase 4 demo lead for business workflow testing.",
+      notes: "Demo lead for unified production workflow.",
     },
   });
 
@@ -192,7 +211,8 @@ async function ensureDemoClient(workspaceId: string) {
       client_id: client.id,
       channel: "email",
       subject: "Initial inquiry",
-      content: "Interested in AI Workforce OS implementation. Please send proposal.",
+      content:
+        "Interested in AI Workforce OS implementation. Please send proposal.",
     },
   });
 }
@@ -246,7 +266,7 @@ async function main() {
   console.log("Seed completed:", {
     workspaceId: workspace.id,
     agents: AGENTS.length,
-    workflowStages: DEV_TEAM_WORKFLOW.stages.length,
+    workflowStages: PRODUCTION_WORKFLOW.stages.length,
   });
 }
 

@@ -83,7 +83,7 @@ export const taskRepository = {
 
   async findTodayTasks(limit = 10) {
     return prisma.task.findMany({
-      where: { status: { in: ["todo", "running", "review", "blocked"] } },
+      where: { status: { in: ["todo", "running", "waiting_external", "review", "blocked"] } },
       orderBy: [{ priority: "asc" }, { created_at: "asc" }],
       take: limit,
       include: taskInclude,

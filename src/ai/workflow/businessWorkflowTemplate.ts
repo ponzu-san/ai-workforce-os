@@ -1,5 +1,5 @@
 /**
- * Phase 4 — Business Workflow テンプレート
+ * @deprecated Use productionWorkflowTemplate.ts — kept for reference only.
  * 営業 → 契約 → 納品
  */
 

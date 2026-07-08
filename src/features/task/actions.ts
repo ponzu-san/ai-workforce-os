@@ -8,6 +8,7 @@ export async function createTaskAction(formData: FormData): Promise<void> {
   const title = formData.get("title");
   const description = formData.get("description");
   const projectId = formData.get("project_id");
+  const stageId = formData.get("stage_id");
   const priority = formData.get("priority");
 
   if (typeof title !== "string" || title.trim().length === 0) {
@@ -20,6 +21,7 @@ export async function createTaskAction(formData: FormData): Promise<void> {
   try {
     await taskService.create({
       project_id: projectId,
+      stage_id: typeof stageId === "string" ? stageId : undefined,
       title: title.trim(),
       description: typeof description === "string" ? description : "",
       priority:

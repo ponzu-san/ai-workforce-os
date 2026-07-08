@@ -5,4 +5,5 @@ export const workflowExecutionService = {
   assignAgents: workflowEngine.assignAgentsForWorkflow,
   executeNext: workflowEngine.executeNextTask,
   startAndExecuteFirst: workflowEngine.startAndExecuteFirst,
+  registerExternalDeliverable: workflowEngine.registerExternalDeliverable,
 };

@@ -1,5 +1,5 @@
 /**
- * Phase 3 — AI Development Team の標準 Workflow テンプレート
+ * @deprecated Use productionWorkflowTemplate.ts — kept for reference only.
  * 要件定義 → デザイン → フロントエンド → バックエンド → 品質保証
  */
 
