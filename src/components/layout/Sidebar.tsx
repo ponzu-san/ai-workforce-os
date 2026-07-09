@@ -20,12 +20,14 @@ interface SidebarProps {
   activeProjectId?: string | null;
   activeProjectName?: string | null;
   activeProjectSteps?: PipelineStep[];
+  activeProjectCurrentStageOrder?: number | null;
 }
 
 export function Sidebar({
   activeProjectId = null,
   activeProjectName = null,
   activeProjectSteps = [],
+  activeProjectCurrentStageOrder = null,
 }: SidebarProps) {
   const pathname = usePathname();
   const isDashboardActive = pathname === "/";
@@ -52,6 +54,7 @@ export function Sidebar({
             projectId={activeProjectId}
             projectName={activeProjectName}
             steps={activeProjectSteps}
+            currentStageOrder={activeProjectCurrentStageOrder}
           />
         ) : null}
 

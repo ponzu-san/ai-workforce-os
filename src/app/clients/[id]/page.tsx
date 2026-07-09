@@ -37,10 +37,7 @@ export default async function ClientDetailPage({
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
       <div>
-        <Link href="/clients" className="text-sm text-muted-foreground">
-          ← {ja.nav.clients}
-        </Link>
-        <div className="mt-2 flex items-start justify-between gap-4">
+        <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold">{client.name}</h1>
             <p className="text-muted-foreground">

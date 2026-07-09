@@ -43,7 +43,7 @@ export default async function ArtifactDetailPage({
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
       <div>
         <ContextLink href={stageReturnTo} className="text-sm">
-          ← {ja.artifacts.backToStage}
+          {ja.artifacts.backToStage}
         </ContextLink>
         <h1 className="mt-2 text-2xl font-bold">{artifact.name}</h1>
         <p className="text-muted-foreground">

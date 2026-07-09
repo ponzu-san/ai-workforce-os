@@ -72,11 +72,13 @@ export default async function ProjectDetailPage({
 
       <div className="flex items-start justify-between gap-4">
         <div>
-          <Link href="/projects" className="text-sm text-muted-foreground">
-            ← {ja.nav.projects}
-          </Link>
-          <h1 className="mt-2 text-2xl font-bold">{project.name}</h1>
-          <p className="text-muted-foreground">{project.description}</p>
+          <p className="text-sm font-medium text-muted-foreground">
+            {ja.project.openSettings}
+          </p>
+          <h1 className="mt-1 text-2xl font-bold">{project.name}</h1>
+          <p className="text-muted-foreground">
+            {project.description || ja.project.settingsSubtitle}
+          </p>
           <div className="mt-2 flex gap-2">
             <StatusBadge value={project.template} />
             <StatusBadge value={project.status} />
@@ -86,7 +88,7 @@ export default async function ProjectDetailPage({
           href={`/p/${project.id}`}
           className="rounded-md border px-3 py-2 text-sm hover:bg-accent"
         >
-          {ja.project.openProject}
+          {ja.project.openWorkspace}
         </Link>
       </div>
 

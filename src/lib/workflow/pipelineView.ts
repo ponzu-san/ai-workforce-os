@@ -239,7 +239,7 @@ export function deriveStageNextAction(
   stageOrder: number,
   stepStatus: PipelineStepStatus,
   pendingApproval: PendingApprovalInput | null,
-  stageArtifactCount: number,
+  _stageArtifactCount: number,
   firstStageArtifactId: string | null = null,
 ): ProjectNextAction | null {
   if (stepStatus === "wait") return null;
@@ -258,15 +258,6 @@ export function deriveStageNextAction(
   );
 
   if (stepStatus === "done") {
-    if (stageArtifactCount > 0) {
-      return {
-        type: "view_artifacts",
-        labelKey: "viewArtifacts",
-        workflowId: workflow.id,
-        href: stagePath(projectId, stageOrder),
-      };
-    }
-
     return null;
   }
 
@@ -407,6 +398,68 @@ export function resolveOpenStageOrder(pipeline: ProjectPipelineView): number {
   }
 
   return 0;
+}
+
+export function resolveNextStageOrder(
+  steps: PipelineStep[],
+  currentOrder: number,
+): number | null {
+  const sorted = [...steps].sort((a, b) => a.order - b.order);
+  const next = sorted.find((step) => step.order > currentOrder);
+  return next?.order ?? null;
+}
+
+export interface StageCompletionQuery {
+  approved?: string;
+  done?: string;
+  executed?: string;
+  registered?: string;
+}
+
+export function hasJustCompletedStageQuery(
+  query: StageCompletionQuery,
+): boolean {
+  return (
+    query.approved === "1" ||
+    query.done === "1" ||
+    query.executed === "1" ||
+    query.registered === "1"
+  );
+}
+
+export function shouldShowGoNextStage(
+  pipeline: ProjectPipelineView,
+  stageOrder: number,
+  query: StageCompletionQuery,
+): boolean {
+  const step = getStepByOrder(pipeline, stageOrder);
+  if (!step || step.status !== "done") return false;
+  if (!hasJustCompletedStageQuery(query)) return false;
+
+  const runStage = pipeline.currentStage;
+  if (!runStage) return false;
+  if (stageOrder !== runStage.order - 1) return false;
+
+  const nextOrder = resolveNextStageOrder(pipeline.steps, stageOrder);
+  if (nextOrder === null) return false;
+
+  const nextStep = getStepByOrder(pipeline, nextOrder);
+  return nextStep?.status === "run";
+}
+
+export function buildGoNextStageAction(
+  pipeline: ProjectPipelineView,
+  stageOrder: number,
+): ProjectNextAction | null {
+  const nextOrder = resolveNextStageOrder(pipeline.steps, stageOrder);
+  if (nextOrder === null) return null;
+
+  return {
+    type: "view_workflow",
+    labelKey: "goNextStage",
+    workflowId: pipeline.workflowId,
+    href: stagePath(pipeline.projectId, nextOrder),
+  };
 }
 
 export function getStepByOrder(

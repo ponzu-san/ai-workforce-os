@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { ContextLink } from "@/components/common/ContextLink";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { ArtifactReviewPanel } from "@/features/artifact/components/ArtifactReviewPanel";
 import { ExternalArtifactRegisterForm } from "@/features/artifact/components/ExternalArtifactRegisterForm";
@@ -12,7 +11,12 @@ import { StageMiniPipeline } from "@/features/project/components/StageMiniPipeli
 import { StagePrimaryAction } from "@/features/project/components/StagePrimaryAction";
 import { ja } from "@/lib/labels/ja";
 import { displayStageName } from "@/lib/labels/stageNames";
-import { getStepByOrder } from "@/lib/workflow/pipelineView";
+import {
+  buildGoNextStageAction,
+  getStepByOrder,
+  shouldShowGoNextStage,
+  type StageCompletionQuery,
+} from "@/lib/workflow/pipelineView";
 import { isPipelineReadyToComplete } from "@/lib/workflow/projectCompletion";
 import { PRODUCTION_STAGE_NAMES } from "@/ai/workflow/productionWorkflowTemplate";
 import type { StageArtifactSummary } from "@/services/projectPipelineService";
@@ -29,6 +33,7 @@ interface StageWorkspaceProps {
   artifacts: StageArtifactSummary[];
   pendingApprovalId: string | null;
   stageNextAction: ProjectNextAction | null;
+  completionQuery?: StageCompletionQuery;
 }
 
 function stageStatusLabel(status: PipelineStepStatus): string {
@@ -44,6 +49,7 @@ export function StageWorkspace({
   artifacts,
   pendingApprovalId,
   stageNextAction,
+  completionQuery = {},
 }: StageWorkspaceProps) {
   const step = getStepByOrder(pipeline, stageOrder);
   if (!step) {
@@ -68,21 +74,22 @@ export function StageWorkspace({
   const showCompletePrompt =
     isPipelineReadyToComplete(pipeline) &&
     step.name === displayStageName(PRODUCTION_STAGE_NAMES.RELEASE);
+  const goNextStageAction = shouldShowGoNextStage(
+    pipeline,
+    stageOrder,
+    completionQuery,
+  )
+    ? buildGoNextStageAction(pipeline, stageOrder)
+    : null;
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-8">
       <div>
-        <Link
-          href="/"
-          className="text-sm text-neutral-500 hover:text-neutral-900"
-        >
-          ← {ja.dashboard.title}
-        </Link>
-        <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <ContextLink href={projectSettingsHref} className="text-sm">
+            <p className="text-sm font-medium text-neutral-600">
               {pipeline.projectName}
-            </ContextLink>
+            </p>
             <h1 className="mt-1 text-2xl font-bold text-neutral-900">
               {step.stepNumber} {step.name}
             </h1>
@@ -160,9 +167,12 @@ export function StageWorkspace({
               <p className="text-sm text-neutral-800">
                 {ja.project.stageNoTasksAction}
               </p>
-              <ContextLink href={projectSettingsHref} className="mt-3 text-sm">
+              <Link
+                href={projectSettingsHref}
+                className="mt-3 inline-block text-sm font-medium text-neutral-900 underline underline-offset-4"
+              >
                 {ja.project.openProjectSettings}
-              </ContextLink>
+              </Link>
             </section>
           ) : null}
           {pendingApprovalId ? (
@@ -180,9 +190,9 @@ export function StageWorkspace({
             <p className="text-sm text-neutral-600">{ja.project.stageReadOnly}</p>
           </section>
           <StageArtifactsSection artifacts={artifacts} />
-          {stageNextAction?.type === "view_artifacts" ? (
+          {goNextStageAction ? (
             <StagePrimaryAction
-              nextAction={stageNextAction}
+              nextAction={goNextStageAction}
               returnTo={returnTo}
             />
           ) : null}

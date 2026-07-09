@@ -47,6 +47,7 @@ export default async function StagePage({
         artifacts={stageContext.artifacts}
         pendingApprovalId={stageContext.pendingApprovalId}
         stageNextAction={stageContext.stageNextAction}
+        completionQuery={query}
       />
     </div>
   );

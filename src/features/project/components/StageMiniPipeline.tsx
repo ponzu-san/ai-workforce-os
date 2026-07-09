@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 
+import { useHorizontalScrollIntoView } from "@/hooks/useHorizontalScrollIntoView";
 import { cn } from "@/lib/utils";
 import { getStepColorClass } from "@/lib/workflow/pipelineView";
 import type { PipelineStep } from "@/types/domain";
@@ -15,18 +16,16 @@ export function StageMiniPipeline({
   steps,
   currentOrder,
 }: StageMiniPipelineProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    activeRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "nearest",
-      inline: "center",
-    });
-  }, [currentOrder]);
+  useHorizontalScrollIntoView(containerRef, activeRef, currentOrder);
 
   return (
-    <div className="flex min-w-0 scroll-px-4 items-center gap-1 overflow-x-auto scroll-smooth px-2 py-1">
+    <div
+      ref={containerRef}
+      className="flex min-w-0 scroll-px-4 items-center gap-1 overflow-x-auto scroll-smooth px-2 py-1"
+    >
       {steps.map((step, index) => (
         <div key={step.order} className="flex shrink-0 items-center">
           <div

@@ -21,6 +21,7 @@ function getActionLabel(labelKey: ProjectNextAction["labelKey"]): string {
     advanceStep: ja.dashboard.advanceStep,
     viewArtifacts: ja.dashboard.viewArtifacts,
     viewWorkflow: ja.dashboard.viewWorkflow,
+    goNextStage: ja.dashboard.goNextStage,
     createProject: ja.dashboard.createProject,
   };
 

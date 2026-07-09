@@ -12,6 +12,7 @@ interface StageNavProps {
   projectId: string;
   projectName: string;
   steps: PipelineStep[];
+  currentStageOrder?: number | null;
 }
 
 function stepStatusLabel(status: PipelineStep["status"]): string {
@@ -20,8 +21,22 @@ function stepStatusLabel(status: PipelineStep["status"]): string {
   return ja.dashboard.stepWait;
 }
 
-export function StageNav({ projectId, projectName, steps }: StageNavProps) {
+export function StageNav({
+  projectId,
+  projectName,
+  steps,
+  currentStageOrder = null,
+}: StageNavProps) {
   const pathname = usePathname();
+  const runStep = steps.find((step) => step.status === "run");
+  const workspaceOrder =
+    currentStageOrder ?? runStep?.order ?? steps[0]?.order ?? 0;
+  const workspaceHref = `/p/${projectId}/stages/${workspaceOrder}`;
+  const settingsHref = `/projects/${projectId}`;
+  const isWorkspaceActive =
+    pathname.startsWith(`/p/${projectId}/stages/`) &&
+    !pathname.startsWith(settingsHref);
+  const isSettingsActive = pathname === settingsHref;
 
   return (
     <div className="mt-4 border-t border-neutral-200 pt-4">
@@ -31,6 +46,30 @@ export function StageNav({ projectId, projectName, steps }: StageNavProps) {
       <p className="truncate px-3 pb-2 text-sm font-medium text-neutral-900">
         {projectName}
       </p>
+      <div className="mb-2 flex flex-col gap-0.5">
+        <Link
+          href={workspaceHref}
+          className={cn(
+            "rounded-md px-3 py-2 text-sm font-medium transition-colors",
+            isWorkspaceActive
+              ? "bg-amber-50 text-neutral-900 ring-1 ring-amber-200"
+              : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900",
+          )}
+        >
+          {ja.project.openWorkspace}
+        </Link>
+        <Link
+          href={settingsHref}
+          className={cn(
+            "rounded-md px-3 py-2 text-sm font-medium transition-colors",
+            isSettingsActive
+              ? "bg-amber-50 text-neutral-900 ring-1 ring-amber-200"
+              : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900",
+          )}
+        >
+          {ja.project.openSettings}
+        </Link>
+      </div>
       <div className="flex flex-col gap-0.5">
         {steps.map((step) => {
           const href = `/p/${projectId}/stages/${step.order}`;

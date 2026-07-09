@@ -76,6 +76,7 @@ export interface ProjectNextAction {
     | "advanceStep"
     | "viewArtifacts"
     | "viewWorkflow"
+    | "goNextStage"
     | "createProject";
   workflowId?: string;
   approvalId?: string;

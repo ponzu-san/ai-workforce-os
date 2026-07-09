@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { PipelineProgressRail } from "@/features/dashboard/components/PipelineProgressRail";
 import { PipelineStepRow } from "@/features/dashboard/components/PipelineStepRow";
@@ -30,12 +28,9 @@ export function ProjectPipelineCard({
             <p className="text-xs font-bold uppercase tracking-widest text-neutral-800">
               {ja.dashboard.pipelineTitle}
             </p>
-            <Link
-              href={`/projects/${pipeline.projectId}`}
-              className="mt-1 block text-2xl font-black text-neutral-900 hover:underline"
-            >
+            <p className="mt-1 text-2xl font-black text-neutral-900">
               {pipeline.projectName}
-            </Link>
+            </p>
             <p className="mt-1 text-sm font-medium text-neutral-700">
               {pipeline.workflowName}
             </p>
@@ -86,9 +81,7 @@ export function ProjectPipelineCard({
           </div>
         ) : null}
 
-        <div className="overflow-x-auto scroll-smooth px-1 py-2">
-          <PipelineStepRow steps={pipeline.steps} />
-        </div>
+        <PipelineStepRow steps={pipeline.steps} />
 
         <OpenProjectButton projectId={pipeline.projectId} compact={compact} />
 

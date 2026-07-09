@@ -18,7 +18,7 @@ export function OpenProjectButton({
       <form action={selectProjectAction}>
         <input type="hidden" name="projectId" value={projectId} />
         <SubmitButton
-          label={ja.project.openProject}
+          label={ja.project.openWorkspace}
           className={
             compact
               ? "border-2 border-black bg-yellow-300 font-black text-neutral-900 shadow-[3px_3px_0_0_#000] hover:bg-yellow-200"
@@ -30,7 +30,7 @@ export function OpenProjectButton({
         href={`/projects/${projectId}`}
         className="text-sm font-medium text-neutral-600 underline underline-offset-4"
       >
-        {ja.project.viewDetails}
+        {ja.project.openSettings}
       </Link>
     </div>
   );

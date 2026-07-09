@@ -50,6 +50,9 @@ export function AppShell({
             activeProjectId={activeProject?.id ?? null}
             activeProjectName={activeProject?.name ?? null}
             activeProjectSteps={activeProjectSteps}
+            activeProjectCurrentStageOrder={
+              activeProject?.currentStageOrder ?? null
+            }
           />
           <main
             id="main-content"

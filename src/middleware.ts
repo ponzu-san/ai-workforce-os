@@ -6,13 +6,22 @@ import {
   ACTIVE_PROJECT_MAX_AGE,
 } from "@/lib/project/constants";
 
+function extractProjectId(pathname: string): string | null {
+  const projectPathMatch = pathname.match(/^\/p\/([^/]+)(?:\/|$)/);
+  if (projectPathMatch) return projectPathMatch[1];
+
+  const settingsPathMatch = pathname.match(/^\/projects\/([^/]+)(?:\/|$)/);
+  if (settingsPathMatch) return settingsPathMatch[1];
+
+  return null;
+}
+
 export function middleware(request: NextRequest) {
-  const match = request.nextUrl.pathname.match(/^\/p\/([^/]+)(?:\/|$)/);
-  if (!match) {
+  const projectId = extractProjectId(request.nextUrl.pathname);
+  if (!projectId) {
     return NextResponse.next();
   }
 
-  const projectId = match[1];
   const response = NextResponse.next();
   const current = request.cookies.get(ACTIVE_PROJECT_COOKIE)?.value;
 
@@ -28,5 +37,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/p/:projectId/:path*"],
+  matcher: ["/p/:projectId/:path*", "/projects/:id"],
 };

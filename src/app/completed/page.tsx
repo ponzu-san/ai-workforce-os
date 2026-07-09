@@ -18,10 +18,7 @@ export default async function CompletedProjectsPage({
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
       <div>
-        <Link href="/" className="text-sm text-neutral-500 hover:text-neutral-900">
-          ← {ja.dashboard.title}
-        </Link>
-        <h1 className="mt-2 text-2xl font-bold text-neutral-900">
+        <h1 className="text-2xl font-bold text-neutral-900">
           {ja.completed.title}
         </h1>
         <p className="mt-1 text-sm text-neutral-600">{ja.completed.subtitle}</p>
