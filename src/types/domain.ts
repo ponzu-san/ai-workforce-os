@@ -89,6 +89,7 @@ export interface ProjectPipelineView {
   projectId: string;
   projectName: string;
   projectStatus: ProjectStatus;
+  projectUpdatedAt?: Date;
   workflowId: string;
   workflowName: string;
   workflowStatus: WorkflowStatus;
@@ -113,6 +114,7 @@ export interface DashboardSummary {
     projectCount: number;
     pendingApprovalCount: number;
     overallProgressPercent: number;
+    completedProjectCount: number;
   };
 }
 

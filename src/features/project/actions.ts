@@ -80,6 +80,41 @@ export async function createProjectAction(formData: FormData): Promise<void> {
   redirect(buildProjectEntryPath(projectId));
 }
 
+export async function completeProjectAction(formData: FormData): Promise<void> {
+  const projectId = formData.get("projectId");
+  const returnTo = formData.get("returnTo");
+
+  if (typeof projectId !== "string") return;
+
+  let errorMessage: string | null = null;
+
+  try {
+    await projectService.complete(projectId);
+    await clearActiveProjectId();
+
+    revalidatePath("/");
+    revalidatePath("/projects");
+    revalidatePath("/completed");
+    revalidatePath(`/projects/${projectId}`);
+    revalidatePath(`/p/${projectId}`);
+    revalidatePath("/", "layout");
+  } catch (error: unknown) {
+    errorMessage =
+      error instanceof Error ? error.message : "案件の完了に失敗しました";
+  }
+
+  const base =
+    typeof returnTo === "string" && returnTo.startsWith("/")
+      ? returnTo
+      : `/projects/${projectId}`;
+
+  if (errorMessage) {
+    redirect(`${base}?error=${encodeURIComponent(errorMessage)}`);
+  }
+
+  redirect("/completed?completed=1");
+}
+
 export async function updateProjectStageModesAction(
   formData: FormData,
 ): Promise<void> {

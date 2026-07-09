@@ -20,9 +20,10 @@ export default async function ProjectsPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const query = await searchParams;
-  const [projects, clients] = await Promise.all([
-    projectService.list(),
+  const [projects, clients, completedCount] = await Promise.all([
+    projectService.listActive(),
     clientService.list(),
+    projectService.countCompleted(),
   ]);
 
   const clientOptions = clients.map((client) => ({
@@ -38,6 +39,15 @@ export default async function ProjectsPage({
         <p className="mt-1 text-sm text-muted-foreground">
           {ja.project.devWorkflowNote}
         </p>
+        {completedCount > 0 ? (
+          <Link
+            href="/completed"
+            className="mt-2 inline-block text-sm font-medium text-neutral-700 hover:underline"
+          >
+            {ja.project.viewCompletedProjects}（{completedCount}
+            {ja.common.projects}）
+          </Link>
+        ) : null}
       </div>
 
       <PageNotice error={query.error} />
@@ -53,6 +63,9 @@ export default async function ProjectsPage({
       </Card>
 
       <div className="grid gap-4">
+        {projects.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{ja.project.noProjects}</p>
+        ) : null}
         {projects.map((project) => {
           const taskCount = project.workflows.reduce(
             (sum, w) =>

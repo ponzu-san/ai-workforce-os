@@ -151,4 +151,10 @@ export const projectRepository = {
   async countByWorkspace(workspaceId: string) {
     return prisma.project.count({ where: { workspace_id: workspaceId } });
   },
+
+  async countCompletedByWorkspace(workspaceId: string) {
+    return prisma.project.count({
+      where: { workspace_id: workspaceId, status: "completed" },
+    });
+  },
 };

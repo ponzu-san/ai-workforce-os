@@ -15,6 +15,8 @@ interface StagePageProps {
     handoff?: string;
     registered?: string;
     task?: string;
+    workflowDone?: string;
+    projectId?: string;
   }>;
 }
 

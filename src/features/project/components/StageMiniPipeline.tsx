@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+
 import { cn } from "@/lib/utils";
 import { getStepColorClass } from "@/lib/workflow/pipelineView";
 import type { PipelineStep } from "@/types/domain";
@@ -13,11 +15,22 @@ export function StageMiniPipeline({
   steps,
   currentOrder,
 }: StageMiniPipelineProps) {
+  const activeRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    activeRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "center",
+    });
+  }, [currentOrder]);
+
   return (
-    <div className="flex min-w-0 items-center gap-1 overflow-x-auto py-1">
+    <div className="flex min-w-0 scroll-px-4 items-center gap-1 overflow-x-auto scroll-smooth px-2 py-1">
       {steps.map((step, index) => (
         <div key={step.order} className="flex shrink-0 items-center">
           <div
+            ref={step.order === currentOrder ? activeRef : undefined}
             className={cn(
               "flex min-w-[4.5rem] flex-col rounded-lg border px-2 py-1.5 text-center",
               step.order === currentOrder

@@ -5,12 +5,16 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import { ArtifactReviewPanel } from "@/features/artifact/components/ArtifactReviewPanel";
 import { ExternalArtifactRegisterForm } from "@/features/artifact/components/ExternalArtifactRegisterForm";
 import { ProjectInstructionForm } from "@/features/dashboard/components/ProjectInstructionForm";
+import { CompleteProjectPrompt } from "@/features/project/components/CompleteProjectPrompt";
 import { StageArtifactsSection } from "@/features/project/components/StageArtifactsSection";
 import { StageLockPanel } from "@/features/project/components/StageLockPanel";
 import { StageMiniPipeline } from "@/features/project/components/StageMiniPipeline";
 import { StagePrimaryAction } from "@/features/project/components/StagePrimaryAction";
 import { ja } from "@/lib/labels/ja";
+import { displayStageName } from "@/lib/labels/stageNames";
 import { getStepByOrder } from "@/lib/workflow/pipelineView";
+import { isPipelineReadyToComplete } from "@/lib/workflow/projectCompletion";
+import { PRODUCTION_STAGE_NAMES } from "@/ai/workflow/productionWorkflowTemplate";
 import type { StageArtifactSummary } from "@/services/projectPipelineService";
 import type {
   PipelineStepStatus,
@@ -61,6 +65,9 @@ export function StageWorkspace({
     stageNextAction.type !== "review_artifact" &&
     stageNextAction.type !== "register_external";
   const projectSettingsHref = `/projects/${pipeline.projectId}`;
+  const showCompletePrompt =
+    isPipelineReadyToComplete(pipeline) &&
+    step.name === displayStageName(PRODUCTION_STAGE_NAMES.RELEASE);
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-8">
@@ -96,6 +103,15 @@ export function StageWorkspace({
           <StageMiniPipeline steps={pipeline.steps} currentOrder={stageOrder} />
         </div>
       </div>
+
+      {showCompletePrompt ? (
+        <CompleteProjectPrompt
+          projectId={pipeline.projectId}
+          projectName={pipeline.projectName}
+          returnTo={returnTo}
+          variant="prominent"
+        />
+      ) : null}
 
       {isLocked ? (
         <StageLockPanel pipeline={pipeline} stageOrder={stageOrder} />
@@ -168,6 +184,14 @@ export function StageWorkspace({
             <StagePrimaryAction
               nextAction={stageNextAction}
               returnTo={returnTo}
+            />
+          ) : null}
+          {showCompletePrompt ? (
+            <CompleteProjectPrompt
+              projectId={pipeline.projectId}
+              projectName={pipeline.projectName}
+              returnTo={returnTo}
+              variant="prominent"
             />
           ) : null}
         </>

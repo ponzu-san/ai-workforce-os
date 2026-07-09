@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 
 const globalNavigationItems = [
   { href: "/clients", label: ja.nav.clients },
+  { href: "/completed", label: ja.nav.completedProjects },
   { href: "/analytics", label: ja.nav.analytics },
   { href: "/validation", label: ja.nav.validation },
   { href: "/settings", label: ja.nav.settings },

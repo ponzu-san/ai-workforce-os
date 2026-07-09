@@ -3,8 +3,10 @@ import Link from "next/link";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { PipelineProgressRail } from "@/features/dashboard/components/PipelineProgressRail";
 import { PipelineStepRow } from "@/features/dashboard/components/PipelineStepRow";
+import { CompleteProjectPrompt } from "@/features/project/components/CompleteProjectPrompt";
 import { OpenProjectButton } from "@/features/project/components/OpenProjectButton";
 import { ja } from "@/lib/labels/ja";
+import { isPipelineReadyToComplete } from "@/lib/workflow/projectCompletion";
 import type { ProjectPipelineView } from "@/types/domain";
 
 interface ProjectPipelineCardProps {
@@ -17,10 +19,12 @@ export function ProjectPipelineCard({
   compact = false,
 }: ProjectPipelineCardProps) {
   const currentStage = pipeline.currentStage;
+  const readyToComplete =
+    !compact && isPipelineReadyToComplete(pipeline);
 
   return (
-    <section className="rounded-3xl border-2 border-black bg-white text-neutral-900 shadow-[6px_6px_0_0_#000]">
-      <div className="border-b-2 border-black bg-yellow-200 px-5 py-4 text-neutral-900">
+    <section className="overflow-hidden rounded-3xl border-2 border-black bg-white text-neutral-900 shadow-[6px_6px_0_0_#000]">
+      <div className="rounded-t-3xl border-b-2 border-black bg-yellow-200 px-5 py-4 text-neutral-900">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-neutral-800">
@@ -48,6 +52,15 @@ export function ProjectPipelineCard({
       </div>
 
       <div className="space-y-5 px-5 py-5">
+        {readyToComplete ? (
+          <CompleteProjectPrompt
+            projectId={pipeline.projectId}
+            projectName={pipeline.projectName}
+            returnTo="/"
+            variant="prominent"
+          />
+        ) : null}
+
         {currentStage ? (
           <div className="rounded-2xl border-2 border-black bg-blue-100 p-4 text-neutral-900 shadow-[3px_3px_0_0_#000]">
             <p className="text-xs font-black uppercase tracking-widest text-neutral-800">
@@ -73,7 +86,7 @@ export function ProjectPipelineCard({
           </div>
         ) : null}
 
-        <div className="overflow-x-auto px-1 py-2">
+        <div className="overflow-x-auto scroll-smooth px-1 py-2">
           <PipelineStepRow steps={pipeline.steps} />
         </div>
 

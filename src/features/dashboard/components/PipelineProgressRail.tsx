@@ -14,15 +14,12 @@ export function PipelineProgressRail({
   return (
     <div className="space-y-2 text-neutral-900">
       <div className="h-4 overflow-hidden rounded-full border-2 border-black bg-white">
-        <div
-          className="flex h-full transition-all duration-500"
-          style={{ width: `${Math.max(progressPercent, 4)}%` }}
-        >
+        <div className="flex h-full w-full">
           {steps.map((step) => (
             <div
               key={step.order}
               className={cn(
-                "h-full min-w-[8px] flex-1 border-r border-black/20 last:border-r-0",
+                "h-full flex-1 border-r border-black/20 last:border-r-0",
                 getStepColorClass(step.order),
                 step.status === "wait" && "opacity-30",
               )}

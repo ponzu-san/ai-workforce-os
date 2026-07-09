@@ -35,6 +35,7 @@ export interface PipelineProjectInput {
   id: string;
   name: string;
   status: ProjectStatus;
+  updated_at?: Date;
   workflows: PipelineWorkflowInput[];
 }
 
@@ -378,6 +379,7 @@ export function buildProjectPipelineView(
     projectId: project.id,
     projectName: project.name,
     projectStatus: project.status,
+    projectUpdatedAt: project.updated_at,
     workflowId: workflow.id,
     workflowName: workflow.name,
     workflowStatus: workflow.status,

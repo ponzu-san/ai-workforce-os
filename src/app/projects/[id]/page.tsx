@@ -15,9 +15,11 @@ import {
   ProjectStageModeSettings,
   type ProjectStageModeItem,
 } from "@/features/project/components/ProjectStageModeSettings";
+import { CompleteProjectPrompt } from "@/features/project/components/CompleteProjectPrompt";
 import { createTaskAction } from "@/features/task/actions";
 import { EXECUTION_MODE_LABELS } from "@/lib/workflow/stageModeConfig";
 import { isStageModeEditable } from "@/lib/workflow/stageModeConfig";
+import { isProjectReadyToComplete } from "@/lib/workflow/projectCompletion";
 import { ja, tStatus } from "@/lib/labels/ja";
 import { displayStageName } from "@/lib/labels/stageNames";
 import { projectService } from "@/services/projectService";
@@ -59,6 +61,8 @@ export default async function ProjectDetailPage({
     editable: isStageModeEditable(stage.tasks.map((t) => t.status)),
   }));
 
+  const showCompletePrompt = isProjectReadyToComplete(project);
+
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
       <PageNotice
@@ -85,6 +89,14 @@ export default async function ProjectDetailPage({
           {ja.project.openProject}
         </Link>
       </div>
+
+      {showCompletePrompt ? (
+        <CompleteProjectPrompt
+          projectId={project.id}
+          projectName={project.name}
+          returnTo={`/projects/${project.id}`}
+        />
+      ) : null}
 
       <Card>
         <CardHeader>

@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { projectRepository } from "@/database/repositories/projectRepository";
 import { workspaceRepository } from "@/database/repositories/workspaceRepository";
+import { isProjectReadyToComplete } from "@/lib/workflow/projectCompletion";
 import type { ProjectTemplate } from "@/types/domain";
 
 const projectTemplateSchema = z.enum([
@@ -34,8 +35,41 @@ export const projectService = {
     return projectRepository.findAllByWorkspace(workspace.id);
   },
 
+  async listActive() {
+    const projects = await this.list();
+    return projects.filter(
+      (project) =>
+        project.status === "active" || project.status === "draft",
+    );
+  },
+
+  async countCompleted() {
+    const workspace = await workspaceRepository.findDefault();
+    if (!workspace) return 0;
+    return projectRepository.countCompletedByWorkspace(workspace.id);
+  },
+
   async getById(id: string) {
     return projectRepository.findById(id);
+  },
+
+  async complete(id: string) {
+    const project = await projectRepository.findById(id);
+    if (!project) {
+      throw new Error("プロジェクトが見つかりません");
+    }
+
+    if (project.status === "completed") {
+      throw new Error("このプロジェクトはすでに完了しています");
+    }
+
+    if (!isProjectReadyToComplete(project)) {
+      throw new Error(
+        "ワークフローが完了していません。全工程を終えてから完了にしてください",
+      );
+    }
+
+    return projectRepository.updateStatus(id, "completed");
   },
 
   async create(input: z.infer<typeof createProjectSchema>) {

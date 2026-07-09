@@ -6,12 +6,14 @@ interface DashboardHeroProps {
   projectCount: number;
   overallProgressPercent: number;
   pendingApprovalCount: number;
+  completedProjectCount: number;
 }
 
 export function DashboardHero({
   projectCount,
   overallProgressPercent,
   pendingApprovalCount,
+  completedProjectCount,
 }: DashboardHeroProps) {
   return (
     <header className="overflow-hidden rounded-3xl border-2 border-black bg-gradient-to-r from-yellow-200 via-pink-200 to-blue-200 text-neutral-900 shadow-[6px_6px_0_0_#000]">
@@ -36,6 +38,15 @@ export function DashboardHero({
             >
               {ja.nav.clients}
             </Link>
+            {completedProjectCount > 0 ? (
+              <Link
+                href="/completed"
+                className="rounded-md border-2 border-black bg-emerald-100 px-4 py-2 text-sm font-black text-neutral-900 shadow-[3px_3px_0_0_#000] hover:bg-emerald-50"
+              >
+                {ja.dashboard.completedCountLink} {completedProjectCount}
+                {ja.common.projects}
+              </Link>
+            ) : null}
           </div>
         </div>
         <div className="flex flex-wrap gap-3">
