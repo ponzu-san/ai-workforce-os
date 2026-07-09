@@ -5,7 +5,13 @@ import {
   getAgentDefinition,
   resolveSystemPrompt,
 } from "@/ai/agents/registry";
+import {
+  filterPriorArtifacts,
+  formatPriorArtifacts,
+} from "@/ai/context/stageArtifactFilter";
 import { executeRouterRequest } from "@/ai/router/executeRequest";
+import { resolveMaxOutputTokens } from "@/ai/router/tokenBudget";
+import { logger } from "@/lib/logger";
 import type { StageExecutionMode } from "@/types/domain";
 
 export interface AgentRunResult {
@@ -16,29 +22,6 @@ export interface AgentRunResult {
   artifactName: string;
 }
 
-function formatPriorArtifacts(
-  artifacts: Awaited<ReturnType<typeof artifactRepository.findByWorkflowId>>,
-  currentTaskId: string,
-): string {
-  const prior = artifacts.filter((a) => a.task_id !== currentTaskId);
-  if (prior.length === 0) return "";
-
-  return prior
-    .map((a) => {
-      const header = `### ${a.name} (${a.task.stage.name} / ${a.task.assigned_agent?.name ?? "Agent"})`;
-      if (a.content_kind === "url" && a.external_url) {
-        return `${header}\nURL: ${a.external_url}${a.content ? `\n${a.content}` : ""}`;
-      }
-      if (a.content_kind === "file" && a.file_path) {
-        return `${header}\nFile: ${a.file_path}${a.content ? `\n${a.content}` : ""}`;
-      }
-      const body = a.content.slice(0, 1500);
-      const truncated = a.content.length > 1500 ? "\n...(truncated)" : "";
-      return `${header}\n${body}${truncated}`;
-    })
-    .join("\n\n");
-}
-
 export async function runAgentForTask(task: {
   id: string;
   title: string;
@@ -46,6 +29,7 @@ export async function runAgentForTask(task: {
   assigned_agent: { id: string; role: string; name: string } | null;
   stage: {
     name: string;
+    order: number;
     execution_mode: StageExecutionMode;
     workflow: {
       id: string;
@@ -81,7 +65,21 @@ export async function runAgentForTask(task: {
     memoryRepository.findUserMemories(3),
   ]);
 
-  const priorContext = formatPriorArtifacts(priorArtifacts, task.id);
+  const filtered = filterPriorArtifacts(priorArtifacts, {
+    currentTaskId: task.id,
+    currentStageName: task.stage.name,
+    currentStageOrder: task.stage.order,
+  });
+  const priorContext = formatPriorArtifacts(filtered);
+
+  if (process.env.NODE_ENV === "development") {
+    logger.info("Prior artifact context filtered", {
+      stage: task.stage.name,
+      before: priorArtifacts.length,
+      after: filtered.length,
+      chars: priorContext.length,
+    });
+  }
 
   const client = project.client;
   const clientContext = client
@@ -131,11 +129,17 @@ export async function runAgentForTask(task: {
     .filter(Boolean)
     .join("\n\n");
 
+  const maxOutputTokens = resolveMaxOutputTokens(
+    definition.taskKind,
+    executionMode,
+  );
+
   const result = await executeRouterRequest({
     agentRole: agent.role,
     taskKind: definition.taskKind,
     agentId: agent.id,
     taskId: task.id,
+    maxOutputTokens,
     messages: [
       { role: "system", content: systemPrompt },
       {

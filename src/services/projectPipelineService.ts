@@ -1,5 +1,6 @@
 import { approvalRepository } from "@/database/repositories/approvalRepository";
 import { artifactRepository } from "@/database/repositories/artifactRepository";
+import { memoryRepository } from "@/database/repositories/agentRepository";
 import { projectRepository } from "@/database/repositories/projectRepository";
 import { workspaceRepository } from "@/database/repositories/workspaceRepository";
 import { getActiveProjectId } from "@/lib/project/activeProject.server";
@@ -89,9 +90,16 @@ export interface StageArtifactSummary {
   preview: string;
 }
 
+export interface StageInstructionSummary {
+  id: string;
+  content: string;
+  createdAt: Date;
+}
+
 export interface StagePageContext {
   pipeline: ProjectPipelineView;
   artifacts: StageArtifactSummary[];
+  instructions: StageInstructionSummary[];
   pendingApprovalId: string | null;
   pendingArtifactId: string | null;
   stageNextAction: ProjectNextAction | null;
@@ -195,6 +203,16 @@ export const projectPipelineService = {
                 : artifact.content,
       }));
 
+    const instructionRows =
+      await memoryRepository.findUserInstructionsByProject(projectId);
+    const instructions: StageInstructionSummary[] = instructionRows.map(
+      (row) => ({
+        id: row.id,
+        content: row.content,
+        createdAt: row.created_at,
+      }),
+    );
+
     const workflowInput = mapProjectToPipelineInput(project).workflows[0];
     if (!workflowInput) return null;
 
@@ -232,6 +250,7 @@ export const projectPipelineService = {
     return {
       pipeline,
       artifacts,
+      instructions,
       pendingApprovalId,
       pendingArtifactId,
       stageNextAction,

@@ -1,4 +1,5 @@
 import { executeRouterRequest } from "@/ai/router/executeRequest";
+import { resolveMaxOutputTokens } from "@/ai/router/tokenBudget";
 import { getAgentDefinition } from "@/ai/agents/registry";
 import { agentRepository } from "@/database/repositories/agentRepository";
 
@@ -61,6 +62,7 @@ export async function generateQaReport(
       agentRole: "qa",
       taskKind: definition.taskKind,
       agentId: qa.id,
+      maxOutputTokens: resolveMaxOutputTokens(definition.taskKind),
       messages: [
         { role: "system", content: definition.systemPrompt },
         {

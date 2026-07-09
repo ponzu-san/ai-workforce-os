@@ -5,11 +5,13 @@ import type { ProjectNextAction } from "@/types/domain";
 
 interface ProjectInstructionFormProps {
   projectId: string;
+  returnTo: string;
   nextAction: ProjectNextAction;
 }
 
 export function ProjectInstructionForm({
   projectId,
+  returnTo,
   nextAction,
 }: ProjectInstructionFormProps) {
   if (nextAction.type !== "start_and_execute") {
@@ -19,6 +21,7 @@ export function ProjectInstructionForm({
   return (
     <form action={saveProjectInstructionAction} className="space-y-2">
       <input type="hidden" name="projectId" value={projectId} />
+      <input type="hidden" name="returnTo" value={returnTo} />
       <label className="block text-sm font-bold text-neutral-900">
         {ja.project.instruction}
       </label>

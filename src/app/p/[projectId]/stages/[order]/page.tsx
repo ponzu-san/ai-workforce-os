@@ -17,6 +17,7 @@ interface StagePageProps {
     task?: string;
     workflowDone?: string;
     projectId?: string;
+    instructionSaved?: string;
   }>;
 }
 
@@ -45,6 +46,7 @@ export default async function StagePage({
         stageOrder={order}
         returnTo={returnTo}
         artifacts={stageContext.artifacts}
+        instructions={stageContext.instructions}
         pendingApprovalId={stageContext.pendingApprovalId}
         stageNextAction={stageContext.stageNextAction}
         completionQuery={query}

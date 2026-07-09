@@ -15,6 +15,8 @@ export interface RouterRequest {
   messages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
   agentId: string;
   taskId?: string | null;
+  /** Omit to resolve from taskKind via tokenBudget. */
+  maxOutputTokens?: number;
 }
 
 export interface RouterResponse {

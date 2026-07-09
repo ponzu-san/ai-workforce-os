@@ -10,6 +10,7 @@ interface DashboardNoticeProps {
     handoff?: string;
     registered?: string;
     task?: string;
+    instructionSaved?: string;
   };
 }
 
@@ -19,6 +20,14 @@ export function DashboardNotice({ query }: DashboardNoticeProps) {
       <div className="rounded-2xl border-2 border-black bg-red-100 p-4 text-sm font-medium text-red-900 shadow-[3px_3px_0_0_#000]">
         <p className="font-black">{ja.dashboard.errorNotice}</p>
         <p>{decodeURIComponent(query.error)}</p>
+      </div>
+    );
+  }
+
+  if (query.instructionSaved === "1") {
+    return (
+      <div className="rounded-2xl border-2 border-black bg-green-100 p-4 text-sm font-medium text-green-900 shadow-[3px_3px_0_0_#000]">
+        {ja.project.instructionSavedNotice}
       </div>
     );
   }

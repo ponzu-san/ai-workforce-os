@@ -4,6 +4,7 @@ import { projectRepository } from "@/database/repositories/projectRepository";
 import { taskRepository } from "@/database/repositories/taskRepository";
 import { SECRETARY_SYSTEM_PROMPT } from "@/ai/agents/secretary/prompt";
 import { executeRouterRequest } from "@/ai/router/executeRequest";
+import { resolveMaxOutputTokens } from "@/ai/router/tokenBudget";
 
 export const secretaryAgent = {
   async chat(input: {
@@ -54,6 +55,7 @@ export const secretaryAgent = {
       agentRole: "secretary",
       taskKind: "secretary",
       agentId: secretary.id,
+      maxOutputTokens: resolveMaxOutputTokens("secretary"),
       messages: [
         { role: "system", content: SECRETARY_SYSTEM_PROMPT },
         {

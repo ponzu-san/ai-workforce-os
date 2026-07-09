@@ -82,6 +82,13 @@ export const memoryRepository = {
     });
   },
 
+  async findUserInstructionsByProject(projectId: string) {
+    return prisma.memory.findMany({
+      where: { project_id: projectId, source: "user_instruction" },
+      orderBy: { created_at: "desc" },
+    });
+  },
+
   async findUserMemories(limit = 5) {
     return prisma.memory.findMany({
       where: { type: "user", project_id: null },

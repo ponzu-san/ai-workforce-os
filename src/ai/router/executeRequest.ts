@@ -4,6 +4,7 @@ import { generateText } from "ai";
 
 import { executionLogRepository } from "@/database/repositories/agentRepository";
 import { estimateCost, selectModel } from "@/ai/router/modelRouter";
+import { resolveMaxOutputTokens } from "@/ai/router/tokenBudget";
 import type { RouterRequest, RouterResponse } from "@/ai/router/types";
 import { logger } from "@/lib/logger";
 
@@ -29,6 +30,36 @@ function buildFallbackResponse(request: RouterRequest): RouterResponse {
     outputTokens: 0,
     durationMs: 0,
     cost: 0,
+  };
+}
+
+/**
+ * AI SDK v7 rejects `role: "system"` inside `messages`.
+ * Split them into `instructions` + conversation messages.
+ */
+function splitSystemMessages(messages: RouterRequest["messages"]): {
+  instructions: string | undefined;
+  messages: Array<{ role: "user" | "assistant"; content: string }>;
+} {
+  const systemParts: string[] = [];
+  const conversation: Array<{ role: "user" | "assistant"; content: string }> =
+    [];
+
+  for (const message of messages) {
+    if (message.role === "system") {
+      systemParts.push(message.content);
+      continue;
+    }
+    conversation.push({
+      role: message.role,
+      content: message.content,
+    });
+  }
+
+  return {
+    instructions:
+      systemParts.length > 0 ? systemParts.join("\n\n") : undefined,
+    messages: conversation,
   };
 }
 
@@ -66,9 +97,16 @@ export async function executeRouterRequest(
             modelConfig.model,
           );
 
+    const maxOutputTokens =
+      request.maxOutputTokens ?? resolveMaxOutputTokens(request.taskKind);
+
+    const { instructions, messages } = splitSystemMessages(request.messages);
+
     const result = await generateText({
       model,
-      messages: request.messages,
+      ...(instructions ? { instructions } : {}),
+      messages,
+      maxOutputTokens,
     });
 
     const durationMs = Date.now() - start;

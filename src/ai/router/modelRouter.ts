@@ -17,10 +17,12 @@ const MODELS: ModelConfig[] = [
   },
   {
     provider: "anthropic",
-    model: "claude-3-5-haiku-20241022",
+    // Active Haiku (claude-3-5-haiku-20241022 retired 2026-02-19)
+    // Docs: https://platform.claude.com/docs/en/about-claude/models/overview
+    model: "claude-haiku-4-5-20251001",
     tier: "mid",
-    inputCostPer1M: 0.8,
-    outputCostPer1M: 4,
+    inputCostPer1M: 1.0,
+    outputCostPer1M: 5.0,
   },
 ];
 

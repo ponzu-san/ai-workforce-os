@@ -87,7 +87,7 @@ export function ArtifactContent({
   }
 
   return (
-    <div className="max-h-[32rem] overflow-auto rounded-md border bg-muted p-4 text-sm text-foreground">
+    <div className="max-h-[96rem] overflow-auto rounded-md border bg-muted p-4 text-sm text-foreground">
       {renderMarkdownLite(content)}
     </div>
   );

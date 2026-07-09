@@ -219,6 +219,7 @@ export const workflowEngine = {
       assigned_agent: fullTask.assigned_agent,
       stage: {
         name: stage.name,
+        order: stage.order,
         execution_mode: executionMode,
         workflow: {
           id: workflowId,

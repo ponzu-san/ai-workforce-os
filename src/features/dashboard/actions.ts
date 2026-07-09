@@ -1,19 +1,32 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import { memoryRepository } from "@/database/repositories/agentRepository";
+
+function resolveReturnPath(returnTo: FormDataEntryValue | null): string {
+  if (typeof returnTo !== "string" || !returnTo.startsWith("/")) {
+    return "/";
+  }
+  return returnTo.split("?")[0] || "/";
+}
 
 export async function saveProjectInstructionAction(
   formData: FormData,
 ): Promise<void> {
   const projectId = formData.get("projectId");
   const instruction = formData.get("instruction");
+  const returnPath = resolveReturnPath(formData.get("returnTo"));
 
-  if (typeof projectId !== "string" || typeof instruction !== "string") return;
+  if (typeof projectId !== "string" || typeof instruction !== "string") {
+    redirect(returnPath);
+  }
 
   const trimmed = instruction.trim();
-  if (!trimmed) return;
+  if (!trimmed) {
+    redirect(returnPath);
+  }
 
   await memoryRepository.create({
     project_id: projectId,
@@ -23,5 +36,9 @@ export async function saveProjectInstructionAction(
     source: "user_instruction",
   });
 
+  revalidatePath(returnPath);
   revalidatePath("/");
+
+  const separator = returnPath.includes("?") ? "&" : "?";
+  redirect(`${returnPath}${separator}instructionSaved=1`);
 }

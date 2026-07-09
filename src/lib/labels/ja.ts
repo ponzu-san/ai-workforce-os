@@ -122,6 +122,12 @@ export const ja = {
     instructionHint: "工程実行前に保存すると、次のAI実行時に参照されます。",
     instructionPlaceholder: "例: 今回は月額10万円の保守提案書を作成して",
     saveInstruction: "指示を保存",
+    instructionSavedNotice:
+      "指示を保存しました。次のAI実行時に参照されます。",
+    savedInstructions: "保存済みの指示",
+    savedInstructionsEmpty: "まだ指示はありません。",
+    showMore: "続きを表示",
+    showLess: "閉じる",
     noActiveProject: "案件を選択",
     switchProject: "案件を切り替え",
     openProject: "この案件を開く",

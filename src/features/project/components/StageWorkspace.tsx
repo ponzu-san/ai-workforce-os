@@ -4,6 +4,7 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import { ArtifactReviewPanel } from "@/features/artifact/components/ArtifactReviewPanel";
 import { ExternalArtifactRegisterForm } from "@/features/artifact/components/ExternalArtifactRegisterForm";
 import { ProjectInstructionForm } from "@/features/dashboard/components/ProjectInstructionForm";
+import { ProjectInstructionList } from "@/features/dashboard/components/ProjectInstructionList";
 import { CompleteProjectPrompt } from "@/features/project/components/CompleteProjectPrompt";
 import { StageArtifactsSection } from "@/features/project/components/StageArtifactsSection";
 import { StageLockPanel } from "@/features/project/components/StageLockPanel";
@@ -19,7 +20,10 @@ import {
 } from "@/lib/workflow/pipelineView";
 import { isPipelineReadyToComplete } from "@/lib/workflow/projectCompletion";
 import { PRODUCTION_STAGE_NAMES } from "@/ai/workflow/productionWorkflowTemplate";
-import type { StageArtifactSummary } from "@/services/projectPipelineService";
+import type {
+  StageArtifactSummary,
+  StageInstructionSummary,
+} from "@/services/projectPipelineService";
 import type {
   PipelineStepStatus,
   ProjectNextAction,
@@ -31,6 +35,7 @@ interface StageWorkspaceProps {
   stageOrder: number;
   returnTo: string;
   artifacts: StageArtifactSummary[];
+  instructions: StageInstructionSummary[];
   pendingApprovalId: string | null;
   stageNextAction: ProjectNextAction | null;
   completionQuery?: StageCompletionQuery;
@@ -47,6 +52,7 @@ export function StageWorkspace({
   stageOrder,
   returnTo,
   artifacts,
+  instructions,
   pendingApprovalId,
   stageNextAction,
   completionQuery = {},
@@ -129,9 +135,11 @@ export function StageWorkspace({
           {stageNextAction ? (
             <ProjectInstructionForm
               projectId={pipeline.projectId}
+              returnTo={returnTo}
               nextAction={stageNextAction}
             />
           ) : null}
+          <ProjectInstructionList instructions={instructions} />
           <StageArtifactsSection artifacts={artifacts} />
           {stageNextAction?.type === "register_external" &&
           stageNextAction.taskId ? (
@@ -189,6 +197,7 @@ export function StageWorkspace({
           <section className="rounded-xl border border-neutral-200 bg-neutral-50 p-6">
             <p className="text-sm text-neutral-600">{ja.project.stageReadOnly}</p>
           </section>
+          <ProjectInstructionList instructions={instructions} />
           <StageArtifactsSection artifacts={artifacts} />
           {goNextStageAction ? (
             <StagePrimaryAction
