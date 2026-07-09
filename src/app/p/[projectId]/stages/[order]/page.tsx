@@ -10,6 +10,7 @@ interface StagePageProps {
     executed?: string;
     approved?: string;
     rejected?: string;
+    returned?: string;
     error?: string;
     done?: string;
     handoff?: string;
@@ -18,6 +19,8 @@ interface StagePageProps {
     workflowDone?: string;
     projectId?: string;
     instructionSaved?: string;
+    edited?: string;
+    checklistSaved?: string;
   }>;
 }
 
@@ -44,9 +47,13 @@ export default async function StagePage({
       <StageWorkspace
         pipeline={stageContext.pipeline}
         stageOrder={order}
+        stageId={stageContext.stageId}
+        stageName={stageContext.stageName}
         returnTo={returnTo}
         artifacts={stageContext.artifacts}
+        allProjectArtifacts={stageContext.allProjectArtifacts}
         instructions={stageContext.instructions}
+        approvalHistory={stageContext.approvalHistory}
         pendingApprovalId={stageContext.pendingApprovalId}
         stageNextAction={stageContext.stageNextAction}
         completionQuery={query}

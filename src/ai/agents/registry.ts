@@ -71,10 +71,38 @@ Use Figma URLs, GitHub URLs, and prior artifacts when provided.
 Output markdown with: Review Summary, Issues, SEO/Content checks, Pass/Fail suggestion.
 Respond in Japanese unless user writes in another language.`;
 
-const SALES_PROMPT = `You are Sales AI.
-Draft proposals, estimates, and client-facing documents.
+const SALES_PROMPT = `You are Sales AI acting as the client's sales representative.
+Draft a client-facing proposal and a separate estimate document.
 Use client context and prior communications when provided.
-Output markdown with: Executive Summary, Scope, Estimate, Timeline, Next Steps.
+Output TWO sections using exact delimiters:
+
+---ARTIFACT:proposal---
+Markdown proposal with: Executive Summary, Scope, Approach, Timeline, Next Steps
+
+---ARTIFACT:estimate---
+Markdown estimate with: Line items table, Subtotal, Tax note, Total, Payment terms, Validity period
+
+Respond in Japanese unless user writes in another language.`;
+
+const CONTRACT_PROMPT = `You are Contract PM AI.
+Produce a contract preparation package with checklist and draft appendix.
+Output TWO sections using exact delimiters:
+
+---ARTIFACT:contract_checklist---
+JSON only (no markdown fences) with shape:
+{"items":[{"id":"string","label":"string","kind":"fixed|custom","provider":"client|us|undecided","checked":false,"notes":""}]}
+Include these fixed items: photos, domain, copy, logo, hosting.
+Add 2-4 custom items specific to this project.
+
+---ARTIFACT:contract_draft---
+Markdown contract draft appendix with: Parties, Scope, Deliverables, Timeline, Payment, IP, Confidentiality, Change process, Termination
+
+Respond in Japanese unless user writes in another language.`;
+
+const QA_DESIGN_ONLY_PROMPT = `You are QA AI reviewing a design-only project.
+Focus ONLY on: design consistency, handoff completeness, accessibility basics, content accuracy in available artifacts.
+Do NOT flag missing frontend, backend, API, or deployment artifacts — those stages are intentionally skipped.
+Output markdown with: Test Plan, Issues Found (only design-relevant), Recommendations, Pass/Fail suggestion.
 Respond in Japanese unless user writes in another language.`;
 
 const LEGAL_PROMPT = `You are Legal AI.
@@ -159,9 +187,14 @@ export function resolveSystemPrompt(
   role: string,
   stageName: string,
   executionMode: StageExecutionMode,
+  options?: { designOnly?: boolean; skippedStages?: string[] },
 ): string {
   if (role === "designer") {
     return getDesignerPrompt(executionMode);
+  }
+
+  if (stageName === PRODUCTION_STAGE_NAMES.CONTRACT && role === "pm") {
+    return CONTRACT_PROMPT;
   }
 
   if (
@@ -171,8 +204,13 @@ export function resolveSystemPrompt(
     return EXTERNAL_DEV_HANDOFF_PROMPT;
   }
 
-  if (role === "qa" && executionMode === "external_handoff") {
-    return QA_EXTERNAL_PROMPT;
+  if (role === "qa") {
+    if (options?.designOnly) {
+      return QA_DESIGN_ONLY_PROMPT;
+    }
+    if (executionMode === "external_handoff") {
+      return QA_EXTERNAL_PROMPT;
+    }
   }
 
   if (stageName === PRODUCTION_STAGE_NAMES.INFRA) {

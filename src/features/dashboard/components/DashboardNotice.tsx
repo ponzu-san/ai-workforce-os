@@ -5,12 +5,15 @@ interface DashboardNoticeProps {
     executed?: string;
     approved?: string;
     rejected?: string;
+    returned?: string;
     error?: string;
     done?: string;
     handoff?: string;
     registered?: string;
     task?: string;
     instructionSaved?: string;
+    edited?: string;
+    checklistSaved?: string;
   };
 }
 
@@ -40,10 +43,26 @@ export function DashboardNotice({ query }: DashboardNoticeProps) {
     );
   }
 
-  if (query.rejected === "1") {
+  if (query.rejected === "1" || query.returned === "1") {
     return (
       <div className="rounded-2xl border-2 border-black bg-orange-100 p-4 text-sm font-medium text-orange-900 shadow-[3px_3px_0_0_#000]">
-        {ja.approval.reject}
+        {ja.approval.returnedNotice}
+      </div>
+    );
+  }
+
+  if (query.edited === "1") {
+    return (
+      <div className="rounded-2xl border-2 border-black bg-green-100 p-4 text-sm font-medium text-green-900 shadow-[3px_3px_0_0_#000]">
+        {ja.artifacts.editedNotice}
+      </div>
+    );
+  }
+
+  if (query.checklistSaved === "1") {
+    return (
+      <div className="rounded-2xl border-2 border-black bg-green-100 p-4 text-sm font-medium text-green-900 shadow-[3px_3px_0_0_#000]">
+        {ja.contract.savedNotice}
       </div>
     );
   }

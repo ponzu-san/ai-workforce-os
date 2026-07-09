@@ -88,6 +88,8 @@ export interface FilterPriorArtifactsOptions {
   currentTaskId: string;
   currentStageName: string;
   currentStageOrder: number;
+  skippedStageNames?: string[];
+  designOnly?: boolean;
 }
 
 function isProductionStageName(name: string): name is ProductionStageName {
@@ -178,18 +180,36 @@ export function filterPriorArtifacts(
   artifacts: PriorArtifactLike[],
   options: FilterPriorArtifactsOptions,
 ): PriorArtifactLike[] {
-  const { currentTaskId, currentStageName, currentStageOrder } = options;
+  const {
+    currentTaskId,
+    currentStageName,
+    currentStageOrder,
+    skippedStageNames = [],
+    designOnly = false,
+  } = options;
 
+  const skipped = new Set(skippedStageNames);
   const withoutCurrent = artifacts.filter((a) => a.task_id !== currentTaskId);
+  const withoutSkipped = withoutCurrent.filter(
+    (a) => !skipped.has(a.task.stage.name),
+  );
 
   let stageFiltered: PriorArtifactLike[];
   if (isProductionStageName(currentStageName)) {
-    const allow = new Set(STAGE_ARTIFACT_ALLOWLIST[currentStageName]);
-    stageFiltered = withoutCurrent.filter((a) =>
+    let allow = new Set(STAGE_ARTIFACT_ALLOWLIST[currentStageName]);
+    if (designOnly && currentStageName === PRODUCTION_STAGE_NAMES.QA) {
+      allow = new Set([
+        PRODUCTION_STAGE_NAMES.REQUIREMENT,
+        PRODUCTION_STAGE_NAMES.DESIGN,
+        PRODUCTION_STAGE_NAMES.SALES,
+        PRODUCTION_STAGE_NAMES.CONTRACT,
+      ]);
+    }
+    stageFiltered = withoutSkipped.filter((a) =>
       allow.has(a.task.stage.name as ProductionStageName),
     );
   } else {
-    stageFiltered = withoutCurrent.filter(
+    stageFiltered = withoutSkipped.filter(
       (a) => a.task.stage.order < currentStageOrder,
     );
   }

@@ -68,6 +68,67 @@ export const artifactRepository = {
     });
   },
 
+  async findAllByTaskId(taskId: string) {
+    return prisma.artifact.findMany({
+      where: { task_id: taskId },
+      orderBy: { created_at: "desc" },
+      include: {
+        task: {
+          include: {
+            stage: {
+              include: {
+                workflow: { include: { project: true } },
+              },
+            },
+            assigned_agent: true,
+          },
+        },
+      },
+    });
+  },
+
+  async findPreviousVersion(artifactId: string) {
+    const artifact = await prisma.artifact.findUnique({
+      where: { id: artifactId },
+      select: { previous_artifact_id: true },
+    });
+    if (!artifact?.previous_artifact_id) return null;
+    return prisma.artifact.findUnique({
+      where: { id: artifact.previous_artifact_id },
+    });
+  },
+
+  async create(data: {
+    task_id: string;
+    type: string;
+    name: string;
+    content?: string;
+    content_kind?: "markdown" | "url" | "file";
+    external_url?: string | null;
+    file_path?: string | null;
+    mime_type?: string | null;
+    version?: string;
+    source_artifact_ids?: string;
+    previous_artifact_id?: string | null;
+    edited_by?: string;
+  }) {
+    return prisma.artifact.create({ data });
+  },
+
+  async updateContent(
+    id: string,
+    data: {
+      content: string;
+      version?: string;
+      edited_by?: string;
+    },
+  ) {
+    return prisma.artifact.update({
+      where: { id },
+      data,
+    });
+  },
+
   async findByWorkflowId(workflowId: string) {
     return prisma.artifact.findMany({
       where: {

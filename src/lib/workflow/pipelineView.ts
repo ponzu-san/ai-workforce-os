@@ -6,6 +6,7 @@ import type {
   ProjectNextActionType,
   ProjectPipelineView,
   ProjectStatus,
+  StageExecutionMode,
   WorkflowStatus,
 } from "@/types/domain";
 
@@ -20,6 +21,7 @@ export interface PipelineStageInput {
   name: string;
   order: number;
   status: string;
+  execution_mode?: StageExecutionMode;
   tasks: PipelineTaskInput[];
 }
 
@@ -74,6 +76,10 @@ function findActiveTask(stage: PipelineStageInput): PipelineTaskInput | undefine
   );
 }
 
+function isStageSkipped(stage: PipelineStageInput): boolean {
+  return stage.execution_mode === "skip" && isStageCompleted(stage);
+}
+
 function buildSteps(stages: PipelineStageInput[]): PipelineStep[] {
   const sorted = [...stages].sort((a, b) => a.order - b.order);
   const runIndex = sorted.findIndex((stage) => !isStageCompleted(stage));
@@ -84,9 +90,11 @@ function buildSteps(stages: PipelineStageInput[]): PipelineStep[] {
       activeTask?.title ?? stage.tasks[0]?.title ?? null;
 
     let status: PipelineStepStatus;
-    if (isStageCompleted(stage)) {
+    if (isStageSkipped(stage)) {
+      status = "skip";
+    } else if (isStageCompleted(stage)) {
       status = "done";
-    } else if (index === runIndex) {
+    } else if (runIndex >= 0 && index === runIndex) {
       status = "run";
     } else {
       status = "wait";
@@ -98,6 +106,7 @@ function buildSteps(stages: PipelineStageInput[]): PipelineStep[] {
       name: displayStageName(stage.name),
       status,
       previewTaskTitle,
+      executionMode: stage.execution_mode,
     };
   });
 }
@@ -242,7 +251,7 @@ export function deriveStageNextAction(
   _stageArtifactCount: number,
   firstStageArtifactId: string | null = null,
 ): ProjectNextAction | null {
-  if (stepStatus === "wait") return null;
+  if (stepStatus === "wait" || stepStatus === "skip") return null;
 
   const stage = workflow.stages.find((item) => item.order === stageOrder);
   if (!stage) return null;
@@ -314,7 +323,10 @@ export function deriveStageNextAction(
   }
 
   const hasExecutableInStage = stageTasks.some(
-    (task) => task.status === "todo" || task.status === "running",
+    (task) =>
+      task.status === "todo" ||
+      task.status === "running" ||
+      task.status === "blocked",
   );
   if (!hasExecutableInStage || waitingExternalTask) {
     return null;
@@ -411,9 +423,13 @@ export function resolveNextStageOrder(
 
 export interface StageCompletionQuery {
   approved?: string;
-  done?: string;
+  rejected?: string;
+  returned?: string;
   executed?: string;
+  done?: string;
   registered?: string;
+  edited?: string;
+  checklistSaved?: string;
 }
 
 export function hasJustCompletedStageQuery(
@@ -421,6 +437,8 @@ export function hasJustCompletedStageQuery(
 ): boolean {
   return (
     query.approved === "1" ||
+    query.returned === "1" ||
+    query.rejected === "1" ||
     query.done === "1" ||
     query.executed === "1" ||
     query.registered === "1"

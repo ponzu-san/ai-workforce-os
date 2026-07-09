@@ -202,6 +202,7 @@ model Stage {
   execution_mode  StageExecutionMode @default(internal_ai)
   workflow        Workflow           @relation(fields: [workflow_id], references: [id], onDelete: Cascade)
   tasks       Task[]
+  memories    Memory[]
 
   @@index([workflow_id])
   @@map("stages")
@@ -265,6 +266,7 @@ model Approval {
 model Memory {
   id         String     @id @default(uuid()) @db.Uuid
   project_id String?    @map("project_id") @db.Uuid
+  stage_id   String?    @map("stage_id") @db.Uuid
   type       MemoryType
   content    String
   importance Int        @default(5)
@@ -272,27 +274,35 @@ model Memory {
   created_at DateTime   @default(now()) @map("created_at")
   updated_at DateTime   @updatedAt @map("updated_at")
   project    Project?   @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  stage      Stage?     @relation(fields: [stage_id], references: [id], onDelete: SetNull)
 
   @@index([project_id])
+  @@index([stage_id])
   @@index([type])
   @@map("memories")
 }
 
 model Artifact {
-  id         String   @id @default(uuid()) @db.Uuid
-  task_id    String   @map("task_id") @db.Uuid
-  type         String
-  name         String
-  content      String              @default("")
-  content_kind ArtifactContentKind @default(markdown)
-  external_url String?
-  file_path    String?
-  mime_type    String?
-  version      String              @default("1.0.0")
-  created_at DateTime @default(now()) @map("created_at")
-  task       Task     @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  id                   String              @id @default(uuid()) @db.Uuid
+  task_id              String              @map("task_id") @db.Uuid
+  type                 String
+  name                 String
+  content              String              @default("")
+  content_kind         ArtifactContentKind @default(markdown)
+  external_url         String?
+  file_path            String?
+  mime_type            String?
+  version              String              @default("1.0.0")
+  source_artifact_ids  String              @default("[]") @map("source_artifact_ids")
+  previous_artifact_id String?             @map("previous_artifact_id") @db.Uuid
+  edited_by            String              @default("") @map("edited_by")
+  created_at           DateTime            @default(now()) @map("created_at")
+  task                 Task                @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  previous_artifact    Artifact?           @relation("ArtifactVersion", fields: [previous_artifact_id], references: [id], onDelete: SetNull)
+  next_versions        Artifact[]          @relation("ArtifactVersion")
 
   @@index([task_id])
+  @@index([previous_artifact_id])
   @@map("artifacts")
 }
 

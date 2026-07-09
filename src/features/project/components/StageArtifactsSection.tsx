@@ -33,12 +33,24 @@ export function StageArtifactsSection({
                     {artifact.type} · {artifact.taskTitle}
                   </p>
                 </div>
+                <div className="flex flex-wrap gap-2">
                 <Link
                   href={`/artifacts/${artifact.id}`}
                   className="text-sm font-medium text-amber-700 underline underline-offset-4"
                 >
                   {ja.artifacts.viewDetail}
                 </Link>
+                {["proposal", "estimate", "contract_draft"].includes(
+                  artifact.type,
+                ) ? (
+                  <Link
+                    href={`/artifacts/${artifact.id}/preview`}
+                    className="text-sm font-medium text-neutral-700 underline underline-offset-4"
+                  >
+                    {ja.artifacts.openSharePreview}
+                  </Link>
+                ) : null}
+                </div>
               </div>
               <p className="mt-2 line-clamp-3 whitespace-pre-wrap text-sm text-neutral-600">
                 {artifact.preview}

@@ -9,6 +9,38 @@ import { workflowRepository } from "@/database/repositories/workflowRepository";
 import { buildStagePath } from "@/services/navigationRedirectService";
 import type { StageExecutionMode } from "@/types/domain";
 
+async function createArtifactsFromResult(
+  taskId: string,
+  result: Awaited<ReturnType<typeof runAgentForTask>>,
+) {
+  const sourceIds = JSON.stringify(result.sourceArtifactIds);
+  const outputs =
+    result.artifacts && result.artifacts.length > 0
+      ? result.artifacts
+      : [
+          {
+            type: result.artifactType,
+            name: result.artifactName,
+            content: result.content,
+            contentKind: "markdown" as const,
+          },
+        ];
+
+  for (const output of outputs) {
+    await prisma.artifact.create({
+      data: {
+        task_id: taskId,
+        type: output.type,
+        name: output.name,
+        content: output.content,
+        content_kind: output.contentKind ?? "markdown",
+        version: "1.0.0",
+        source_artifact_ids: sourceIds,
+      },
+    });
+  }
+}
+
 async function advanceStageAfterTaskDone(
   workflowId: string,
   taskId: string,
@@ -170,7 +202,10 @@ export const workflowEngine = {
     }
 
     const nextItem = allTasks.find(
-      (item) => item.status === "todo" || item.status === "running",
+      (item) =>
+        item.status === "todo" ||
+        item.status === "running" ||
+        item.status === "blocked",
     );
 
     if (!nextItem) {
@@ -212,32 +247,35 @@ export const workflowEngine = {
 
     await taskRepository.updateStatus(nextTask.id, "running");
 
+    const revisionComment =
+      (await approvalRepository.findLatestRevisionComment(nextTask.id)) ??
+      undefined;
+
     const result = await runAgentForTask({
       id: fullTask.id,
       title: fullTask.title,
       description: fullTask.description,
       assigned_agent: fullTask.assigned_agent,
       stage: {
+        id: stage.id,
         name: stage.name,
         order: stage.order,
         execution_mode: executionMode,
         workflow: {
           id: workflowId,
-          project: fullTask.stage.workflow.project,
+          project: {
+            ...fullTask.stage.workflow.project,
+            template: workflow.project.template,
+          },
+          stages: workflow.stages.map((s) => ({
+            name: s.name,
+            execution_mode: s.execution_mode,
+          })),
         },
       },
-    });
+    }, { revisionComment });
 
-    await prisma.artifact.create({
-      data: {
-        task_id: nextTask.id,
-        type: result.artifactType,
-        name: result.artifactName,
-        content: result.content,
-        content_kind: "markdown",
-        version: "1.0.0",
-      },
-    });
+    await createArtifactsFromResult(nextTask.id, result);
 
     if (needsHandoffRegistration(executionMode)) {
       await taskRepository.updateStatus(nextTask.id, "waiting_external");

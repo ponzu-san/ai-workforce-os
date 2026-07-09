@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { approvalRepository } from "@/database/repositories/approvalRepository";
+import { prisma } from "@/database/client";
 import { taskRepository } from "@/database/repositories/taskRepository";
 import { workflowEngine } from "@/ai/workflow/workflowEngine";
 
@@ -30,16 +31,35 @@ export const approvalService = {
     return approvalRepository.findById(id);
   },
 
-  async reject(id: string, input: z.infer<typeof reviewSchema>) {
+  async returnForRevision(id: string, input: z.infer<typeof reviewSchema>) {
     const data = reviewSchema.parse(input);
+    const comment = data.comment?.trim() ?? "";
+    if (!comment) {
+      throw new Error("差し戻しにはコメントが必要です");
+    }
+
     const approval = await approvalRepository.updateStatus(
       id,
       "rejected",
-      data.comment ?? "",
+      comment,
       "user",
     );
-    await taskRepository.updateStatus(approval.task_id, "blocked");
+
+    await taskRepository.updateStatus(approval.task_id, "todo");
+
+    const task = await taskRepository.findById(approval.task_id);
+    if (task) {
+      await prisma.workflow.update({
+        where: { id: task.stage.workflow.id },
+        data: { status: "running" },
+      });
+    }
+
     return approvalRepository.findById(id);
+  },
+
+  async reject(id: string, input: z.infer<typeof reviewSchema>) {
+    return this.returnForRevision(id, input);
   },
 
   reviewSchema,

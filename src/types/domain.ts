@@ -48,7 +48,7 @@ export type StageExecutionMode =
 
 export type ArtifactContentKind = "markdown" | "url" | "file";
 
-export type PipelineStepStatus = "done" | "run" | "wait";
+export type PipelineStepStatus = "done" | "run" | "wait" | "skip";
 
 export type ProjectNextActionType =
   | "review_artifact"
@@ -65,6 +65,7 @@ export interface PipelineStep {
   name: string;
   status: PipelineStepStatus;
   previewTaskTitle: string | null;
+  executionMode?: StageExecutionMode;
 }
 
 export interface ProjectNextAction {

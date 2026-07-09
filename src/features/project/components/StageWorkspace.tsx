@@ -1,15 +1,21 @@
 import Link from "next/link";
 
+import { PRODUCTION_STAGE_NAMES } from "@/ai/workflow/productionWorkflowTemplate";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { ArtifactReviewPanel } from "@/features/artifact/components/ArtifactReviewPanel";
 import { ExternalArtifactRegisterForm } from "@/features/artifact/components/ExternalArtifactRegisterForm";
-import { ProjectInstructionForm } from "@/features/dashboard/components/ProjectInstructionForm";
 import { ProjectInstructionList } from "@/features/dashboard/components/ProjectInstructionList";
+import { ApprovalHistoryPanel } from "@/features/project/components/ApprovalHistoryPanel";
 import { CompleteProjectPrompt } from "@/features/project/components/CompleteProjectPrompt";
+import { DeliveryArtifactHub } from "@/features/project/components/DeliveryArtifactHub";
 import { StageArtifactsSection } from "@/features/project/components/StageArtifactsSection";
+import { StageCompletionSummary } from "@/features/project/components/StageCompletionSummary";
+import { StageExecutionBriefPanel } from "@/features/project/components/StageExecutionBriefPanel";
+import { StageInstructionForm } from "@/features/project/components/StageInstructionForm";
 import { StageLockPanel } from "@/features/project/components/StageLockPanel";
 import { StageMiniPipeline } from "@/features/project/components/StageMiniPipeline";
 import { StagePrimaryAction } from "@/features/project/components/StagePrimaryAction";
+import { StageSkippedPanel } from "@/features/project/components/StageSkippedPanel";
 import { ja } from "@/lib/labels/ja";
 import { displayStageName } from "@/lib/labels/stageNames";
 import {
@@ -19,8 +25,8 @@ import {
   type StageCompletionQuery,
 } from "@/lib/workflow/pipelineView";
 import { isPipelineReadyToComplete } from "@/lib/workflow/projectCompletion";
-import { PRODUCTION_STAGE_NAMES } from "@/ai/workflow/productionWorkflowTemplate";
 import type {
+  ApprovalHistoryEntry,
   StageArtifactSummary,
   StageInstructionSummary,
 } from "@/services/projectPipelineService";
@@ -33,9 +39,13 @@ import type {
 interface StageWorkspaceProps {
   pipeline: ProjectPipelineView;
   stageOrder: number;
+  stageId: string;
+  stageName: string;
   returnTo: string;
   artifacts: StageArtifactSummary[];
+  allProjectArtifacts: StageArtifactSummary[];
   instructions: StageInstructionSummary[];
+  approvalHistory: ApprovalHistoryEntry[];
   pendingApprovalId: string | null;
   stageNextAction: ProjectNextAction | null;
   completionQuery?: StageCompletionQuery;
@@ -44,15 +54,30 @@ interface StageWorkspaceProps {
 function stageStatusLabel(status: PipelineStepStatus): string {
   if (status === "done") return ja.dashboard.stepDone;
   if (status === "run") return ja.dashboard.stepRun;
+  if (status === "skip") return ja.dashboard.stepSkip;
   return ja.dashboard.stepWait;
+}
+
+function resolveCompletionVariant(
+  query: StageCompletionQuery,
+): "executed" | "approved" | "returned" | "registered" | null {
+  if (query.approved === "1") return "approved";
+  if (query.returned === "1" || query.rejected === "1") return "returned";
+  if (query.registered === "1") return "registered";
+  if (query.executed === "1" || query.done === "1") return "executed";
+  return null;
 }
 
 export function StageWorkspace({
   pipeline,
   stageOrder,
+  stageId,
+  stageName,
   returnTo,
   artifacts,
+  allProjectArtifacts,
   instructions,
+  approvalHistory,
   pendingApprovalId,
   stageNextAction,
   completionQuery = {},
@@ -65,6 +90,7 @@ export function StageWorkspace({
   }
 
   const isLocked = step.status === "wait";
+  const isSkipped = step.status === "skip";
   const isReadOnly = step.status === "done";
   const canOperate = step.status === "run";
   const isCurrentRunStage = pipeline.currentStage?.order === stageOrder;
@@ -87,6 +113,10 @@ export function StageWorkspace({
   )
     ? buildGoNextStageAction(pipeline, stageOrder)
     : null;
+  const completionVariant = resolveCompletionVariant(completionQuery);
+  const releaseArtifact = artifacts.find(
+    (artifact) => artifact.type === "document" || artifact.name.includes("納品"),
+  );
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-8">
@@ -99,7 +129,7 @@ export function StageWorkspace({
             <h1 className="mt-1 text-2xl font-bold text-neutral-900">
               {step.stepNumber} {step.name}
             </h1>
-            {!isLocked ? (
+            {!isLocked && !isSkipped ? (
               <p className="mt-1 text-sm text-neutral-600">
                 {ja.common.task}: {taskTitle}
               </p>
@@ -117,6 +147,14 @@ export function StageWorkspace({
         </div>
       </div>
 
+      {completionVariant && taskTitle ? (
+        <StageCompletionSummary
+          stageName={stageName}
+          taskTitle={taskTitle}
+          variant={completionVariant}
+        />
+      ) : null}
+
       {showCompletePrompt ? (
         <CompleteProjectPrompt
           projectId={pipeline.projectId}
@@ -126,21 +164,40 @@ export function StageWorkspace({
         />
       ) : null}
 
+      {step.name === displayStageName(PRODUCTION_STAGE_NAMES.RELEASE) ? (
+        <DeliveryArtifactHub
+          artifacts={allProjectArtifacts}
+          releaseArtifactId={releaseArtifact?.id}
+        />
+      ) : null}
+
+      {isSkipped ? (
+        <StageSkippedPanel
+          pipeline={pipeline}
+          stageOrder={stageOrder}
+          stageName={stageName}
+        />
+      ) : null}
+
       {isLocked ? (
         <StageLockPanel pipeline={pipeline} stageOrder={stageOrder} />
       ) : null}
 
-      {!isLocked && canOperate ? (
+      {!isLocked && !isSkipped && canOperate ? (
         <>
-          {stageNextAction ? (
-            <ProjectInstructionForm
-              projectId={pipeline.projectId}
-              returnTo={returnTo}
-              nextAction={stageNextAction}
-            />
-          ) : null}
+          <StageExecutionBriefPanel
+            stageName={stageName}
+            nextAction={stageNextAction}
+          />
+          <StageInstructionForm
+            projectId={pipeline.projectId}
+            stageId={stageId}
+            returnTo={returnTo}
+            nextAction={stageNextAction}
+          />
           <ProjectInstructionList instructions={instructions} />
           <StageArtifactsSection artifacts={artifacts} />
+          <ApprovalHistoryPanel history={approvalHistory} />
           {stageNextAction?.type === "register_external" &&
           stageNextAction.taskId ? (
             <ExternalArtifactRegisterForm
@@ -199,6 +256,7 @@ export function StageWorkspace({
           </section>
           <ProjectInstructionList instructions={instructions} />
           <StageArtifactsSection artifacts={artifacts} />
+          <ApprovalHistoryPanel history={approvalHistory} />
           {goNextStageAction ? (
             <StagePrimaryAction
               nextAction={goNextStageAction}

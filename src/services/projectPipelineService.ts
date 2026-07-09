@@ -57,6 +57,7 @@ function mapProjectToPipelineInput(
         name: stage.name,
         order: stage.order,
         status: stage.status,
+        execution_mode: stage.execution_mode,
         tasks: stage.tasks.map((task) => ({
           id: task.id,
           title: task.title,
@@ -88,18 +89,33 @@ export interface StageArtifactSummary {
   type: string;
   taskTitle: string;
   preview: string;
+  sourceArtifactIds: string[];
 }
 
 export interface StageInstructionSummary {
   id: string;
   content: string;
   createdAt: Date;
+  stageId: string | null;
+}
+
+export interface ApprovalHistoryEntry {
+  id: string;
+  status: string;
+  comment: string;
+  approvedBy: string | null;
+  approvedAt: Date | null;
+  createdAt: Date;
 }
 
 export interface StagePageContext {
   pipeline: ProjectPipelineView;
+  stageId: string;
+  stageName: string;
   artifacts: StageArtifactSummary[];
+  allProjectArtifacts: StageArtifactSummary[];
   instructions: StageInstructionSummary[];
+  approvalHistory: ApprovalHistoryEntry[];
   pendingApprovalId: string | null;
   pendingArtifactId: string | null;
   stageNextAction: ProjectNextAction | null;
@@ -186,31 +202,70 @@ export const projectPipelineService = {
     if (!stage) return null;
 
     const allArtifacts = await artifactRepository.findByWorkflowId(workflow.id);
-    const artifacts: StageArtifactSummary[] = allArtifacts
-      .filter((artifact) => artifact.task.stage.order === stageOrder)
-      .map((artifact) => ({
-        id: artifact.id,
-        name: artifact.name,
-        type: artifact.type,
-        taskTitle: artifact.task.title,
-        preview:
-          artifact.content_kind === "url" && artifact.external_url
-            ? artifact.external_url
-            : artifact.content_kind === "file" && artifact.file_path
-              ? artifact.file_path
+    const mapArtifact = (
+      artifact: (typeof allArtifacts)[number],
+    ): StageArtifactSummary => ({
+      id: artifact.id,
+      name: artifact.name,
+      type: artifact.type,
+      taskTitle: artifact.task.title,
+      preview:
+        artifact.content_kind === "url" && artifact.external_url
+          ? artifact.external_url
+          : artifact.content_kind === "file" && artifact.file_path
+            ? artifact.file_path
+            : artifact.type === "contract_checklist"
+              ? "契約チェックリスト"
               : artifact.content.length > 200
                 ? `${artifact.content.slice(0, 200)}...`
                 : artifact.content,
-      }));
+      sourceArtifactIds: (() => {
+        try {
+          return JSON.parse(artifact.source_artifact_ids || "[]") as string[];
+        } catch {
+          return [];
+        }
+      })(),
+    });
 
-    const instructionRows =
-      await memoryRepository.findUserInstructionsByProject(projectId);
+    const artifacts: StageArtifactSummary[] = allArtifacts
+      .filter((artifact) => artifact.task.stage.order === stageOrder)
+      .map(mapArtifact);
+
+    const allProjectArtifacts: StageArtifactSummary[] =
+      allArtifacts.map(mapArtifact);
+
+    const instructionRows = await memoryRepository.findInstructionsByProject(
+      projectId,
+      stage.id,
+    );
     const instructions: StageInstructionSummary[] = instructionRows.map(
       (row) => ({
         id: row.id,
         content: row.content,
         createdAt: row.created_at,
+        stageId: row.stage_id,
       }),
+    );
+
+    const approvalRows = stage.tasks.flatMap((task) => task.id);
+    const approvalHistory: ApprovalHistoryEntry[] = [];
+    for (const taskId of approvalRows) {
+      const rows = await approvalRepository.findByTaskId(taskId);
+      for (const row of rows) {
+        if (row.status === "pending") continue;
+        approvalHistory.push({
+          id: row.id,
+          status: row.status,
+          comment: row.comment,
+          approvedBy: row.approved_by,
+          approvedAt: row.approved_at,
+          createdAt: row.created_at,
+        });
+      }
+    }
+    approvalHistory.sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
     );
 
     const workflowInput = mapProjectToPipelineInput(project).workflows[0];
@@ -249,8 +304,12 @@ export const projectPipelineService = {
 
     return {
       pipeline,
+      stageId: stage.id,
+      stageName: stage.name,
       artifacts,
+      allProjectArtifacts,
       instructions,
+      approvalHistory,
       pendingApprovalId,
       pendingArtifactId,
       stageNextAction,

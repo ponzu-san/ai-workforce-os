@@ -98,4 +98,19 @@ export const approvalRepository = {
       },
     });
   },
+
+  async findByTaskId(taskId: string) {
+    return prisma.approval.findMany({
+      where: { task_id: taskId },
+      orderBy: { created_at: "desc" },
+    });
+  },
+
+  async findLatestRevisionComment(taskId: string): Promise<string | null> {
+    const rejected = await prisma.approval.findFirst({
+      where: { task_id: taskId, status: "rejected" },
+      orderBy: { created_at: "desc" },
+    });
+    return rejected?.comment?.trim() ? rejected.comment : null;
+  },
 };

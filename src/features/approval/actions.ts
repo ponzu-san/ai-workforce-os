@@ -10,14 +10,14 @@ import { approvalService } from "@/services/approvalService";
 
 export async function reviewApprovalAction(
   approvalId: string,
-  action: "approve" | "reject",
+  action: "approve" | "return" | "reject",
   comment?: string,
 ): Promise<string | null> {
   try {
     if (action === "approve") {
       await approvalService.approve(approvalId, { comment });
     } else {
-      await approvalService.reject(approvalId, { comment });
+      await approvalService.returnForRevision(approvalId, { comment });
       return null;
     }
 
@@ -37,7 +37,10 @@ export async function reviewApprovalAction(
     if (!project || !isProjectReadyToComplete(project)) return null;
 
     return `workflowDone=1&projectId=${projectId}`;
-  } catch {
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      throw error;
+    }
     return null;
   }
 }
@@ -51,25 +54,43 @@ export async function reviewApprovalFormAction(
   const returnTo = formData.get("returnTo");
 
   if (typeof approvalId !== "string") return;
-  if (action !== "approve" && action !== "reject") return;
-
-  const workflowDoneQuery = await reviewApprovalAction(
-    approvalId,
-    action,
-    typeof comment === "string" ? comment : undefined,
-  );
-
-  let resultQuery =
-    action === "approve" ? "approved=1" : "rejected=1";
-
-  if (action === "approve" && workflowDoneQuery) {
-    resultQuery = workflowDoneQuery;
+  if (action !== "approve" && action !== "return" && action !== "reject") {
+    return;
   }
 
-  if (typeof returnTo === "string" && returnTo.startsWith("/")) {
-    const separator = returnTo.includes("?") ? "&" : "?";
-    redirect(`${returnTo}${separator}${resultQuery}`);
-  }
+  const normalizedAction =
+    action === "reject" ? "return" : (action as "approve" | "return");
 
-  redirect(action === "approve" ? `/?${resultQuery}` : `/?rejected=1`);
+  try {
+    const workflowDoneQuery = await reviewApprovalAction(
+      approvalId,
+      normalizedAction,
+      typeof comment === "string" ? comment : undefined,
+    );
+
+    let resultQuery =
+      normalizedAction === "approve" ? "approved=1" : "returned=1";
+
+    if (normalizedAction === "approve" && workflowDoneQuery) {
+      resultQuery = workflowDoneQuery;
+    }
+
+    if (typeof returnTo === "string" && returnTo.startsWith("/")) {
+      const separator = returnTo.includes("?") ? "&" : "?";
+      redirect(`${returnTo}${separator}${resultQuery}`);
+    }
+
+    redirect(
+      normalizedAction === "approve" ? `/?${resultQuery}` : `/?returned=1`,
+    );
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "承認処理に失敗しました";
+    const path =
+      typeof returnTo === "string" && returnTo.startsWith("/")
+        ? returnTo
+        : "/";
+    const separator = path.includes("?") ? "&" : "?";
+    redirect(`${path}${separator}error=${encodeURIComponent(message)}`);
+  }
 }

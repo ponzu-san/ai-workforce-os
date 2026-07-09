@@ -89,6 +89,31 @@ export const memoryRepository = {
     });
   },
 
+  async findInstructionsForStage(projectId: string, stageId: string) {
+    return prisma.memory.findMany({
+      where: {
+        project_id: projectId,
+        source: "user_instruction",
+        OR: [{ stage_id: stageId }, { stage_id: null }],
+      },
+      orderBy: { created_at: "desc" },
+      take: 10,
+    });
+  },
+
+  async findInstructionsByProject(projectId: string, stageId?: string | null) {
+    return prisma.memory.findMany({
+      where: {
+        project_id: projectId,
+        source: "user_instruction",
+        ...(stageId
+          ? { OR: [{ stage_id: stageId }, { stage_id: null }] }
+          : {}),
+      },
+      orderBy: { created_at: "desc" },
+    });
+  },
+
   async findUserMemories(limit = 5) {
     return prisma.memory.findMany({
       where: { type: "user", project_id: null },
@@ -99,6 +124,7 @@ export const memoryRepository = {
 
   async create(data: {
     project_id?: string | null;
+    stage_id?: string | null;
     type: "short_term" | "project" | "user";
     content: string;
     importance?: number;

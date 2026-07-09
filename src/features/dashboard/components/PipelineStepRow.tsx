@@ -15,6 +15,7 @@ interface PipelineStepRowProps {
 function stepBadgeLabel(status: PipelineStep["status"]): string {
   if (status === "done") return ja.dashboard.stepDone;
   if (status === "run") return ja.dashboard.stepRun;
+  if (status === "skip") return ja.dashboard.stepSkip;
   return ja.dashboard.stepWait;
 }
 
@@ -40,6 +41,7 @@ export function PipelineStepRow({ steps }: PipelineStepRowProps) {
               getStepColorClass(step.order),
               step.status === "run" && "z-10 ring-2 ring-pink-500",
               step.status === "wait" && "opacity-50 grayscale",
+              step.status === "skip" && "opacity-60",
               step.status === "done" && "opacity-90",
             )}
           >

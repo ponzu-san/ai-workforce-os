@@ -18,6 +18,7 @@ interface StageNavProps {
 function stepStatusLabel(status: PipelineStep["status"]): string {
   if (status === "done") return ja.dashboard.stepDone;
   if (status === "run") return ja.dashboard.stepRun;
+  if (status === "skip") return ja.dashboard.stepSkip;
   return ja.dashboard.stepWait;
 }
 
@@ -86,6 +87,7 @@ export function StageNav({
                   ? "bg-amber-50 font-medium text-neutral-900 ring-1 ring-amber-200"
                   : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900",
                 step.status === "wait" && !isActive && "text-neutral-500",
+                step.status === "skip" && !isActive && "text-neutral-500",
               )}
             >
               <span className="w-7 shrink-0 font-mono text-xs tabular-nums">
@@ -102,6 +104,11 @@ export function StageNav({
               ) : null}
               {step.status === "wait" ? (
                 <Lock className="h-3.5 w-3.5 shrink-0 text-neutral-400" />
+              ) : null}
+              {step.status === "skip" ? (
+                <span className="shrink-0 rounded bg-neutral-200 px-1.5 py-0.5 text-[10px] font-bold text-neutral-600">
+                  {stepStatusLabel(step.status)}
+                </span>
               ) : null}
             </Link>
           );
